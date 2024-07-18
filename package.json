@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "esModuleInterop": true
+  },
+  "include": [
+    "src"
+  ],
+  "type": "module",
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "effect": "^3.4.8",
+    "express": "^4.19.2",
+    "ts-node": "^10.9.2",
+    "ws": "^8.18.0"
+  }
+}
