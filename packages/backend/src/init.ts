@@ -1,5 +1,8 @@
-import { Card, deckOf32Cards, shuffleArray } from "./cards";
-import { Game, Player, Players, Team, winner } from "./players";
+import { Card, deckOf32Cards } from "shared/src/cards";
+import { Player, Players, Team } from "shared/src/players";
+import { Game } from "shared/src/game";
+import { shuffleArray } from "./cards";
+import { winner } from "./players";
 
 function initPlayer(name: string, cards: Card[]): Player {
     return {

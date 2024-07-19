@@ -1,27 +1,11 @@
-import { Card, Color, countPointsCards } from "./cards"
-
-type Fold = {
-    cards: [Card, Card, Card, Card],
-    isLastFold: boolean
-}
+import { Color, Fold } from "shared/src/cards"
+import { Team } from "shared/src/players"
+import { countPointsCards } from "./cards"
+import { Game } from "shared/src/game"
 
 function countFoldPoints(fold: Fold, assetColor: Color): number {
     const foldPoints = countPointsCards(fold.cards, assetColor)
     return fold.isLastFold ? foldPoints + 10 : foldPoints
-}
-
-export type Player = {
-    name: string,
-    hand: Card[],
-    folds: Fold[]
-}
-
-export type Players = [Player, Player, Player, Player]
-
-export type Team = {
-    name: string,
-    players: [Player, Player]
-    score: number
 }
 
 export function winner(game: Game): Team | undefined {
@@ -46,10 +30,4 @@ export function winner(game: Game): Team | undefined {
         }
     }
 }
-
-export type Game = {
-    teams: [Team, Team],
-    playerOrder: Players
-}
-
 

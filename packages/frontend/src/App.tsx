@@ -1,12 +1,12 @@
 import './App.css';
-import { User } from 'shared/src/types';
+import { deckOf32Cards } from 'shared/src/cards';
 
 
 function App() {
-  const user: User = { id: 1, name: 'John Doe' };
   return (
     <div className="App">
-      <h1>Hello, {user.name}!</h1>
+      <h1>Hello</h1>
+      <div>{JSON.stringify(deckOf32Cards)}</div>
     </div>
   );
 }

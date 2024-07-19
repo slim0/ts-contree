@@ -1,6 +1,5 @@
 import express from 'express';
 import { WebSocketServer } from "ws";
-import { User } from 'shared/src/types';
 
 const app = express();
 const wss = new WebSocketServer({ port: 8080 });
