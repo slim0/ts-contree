@@ -1,5 +1,5 @@
-import { Card, deckOf32Cards, shuffleArray } from "./cards.js";
-import { Game, Player, Players, Team, winner } from "./players.js";
+import { Card, deckOf32Cards, shuffleArray } from "./cards";
+import { Game, Player, Players, Team, winner } from "./players";
 
 function initPlayer(name: string, cards: Card[]): Player {
     return {

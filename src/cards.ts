@@ -1,4 +1,4 @@
-import { exhaustiveCheck } from "./typescript-tools.js"
+import { exhaustiveCheck } from "./typescript-tools"
 
 type SpadesColor = "spades"
 type ClubsColor = "clubs"

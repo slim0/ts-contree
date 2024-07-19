@@ -1,4 +1,4 @@
-import { Card, Color, countPointsCards } from "./cards.js"
+import { Card, Color, countPointsCards } from "./cards"
 
 type Fold = {
     cards: [Card, Card, Card, Card],
