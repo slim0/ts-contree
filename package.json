@@ -1,24 +1,11 @@
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "express": [
-        "node_modules/express/lib/express"
-      ]
-    }
-  },
-  "include": [
-    "src"
+  "name": "ts-contree",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
-  "devDependencies": {
-    "typescript": "^5.5.3"
-  },
-  "dependencies": {
-    "@types/express": "^4.17.21",
-    "@types/ws": "^8.5.11",
-    "effect": "^3.4.8",
-    "express": "^4.19.2",
-    "ts-node": "^10.9.2",
-    "ws": "^8.18.0"
-  }
+  "author": "Simon <simon.lyobard@gmail.com>",
+  "license": "MIT"
 }

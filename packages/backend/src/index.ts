@@ -1,5 +1,6 @@
 import express from 'express';
 import { WebSocketServer } from "ws";
+import { User } from 'shared/src/types';
 
 const app = express();
 const wss = new WebSocketServer({ port: 8080 });
@@ -24,10 +25,4 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('A client disconnected.');
   });
-});
-
-// Start the server
-const port = 3000;
-app.listen(port, () => {
-  console.log(`Server started on http://localhost:${port}`);
 });
