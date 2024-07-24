@@ -1,18 +1,12 @@
-import './App.css';
-import { Card } from 'shared/src/cards';
-
+import './App.css'
+import UserForm from './components/UserForm'
 
 function App() {
-  const test: Card = {
-    name: "As",
-    color: "clubs"
-  }
-  return (
-    <div className="App">
-      <h1>Hello</h1>
-      <div>{JSON.stringify(test)}</div>
-    </div>
-  );
+    return (
+        <div className="App">
+            <UserForm />
+        </div>
+    )
 }
 
-export default App;
+export default App
