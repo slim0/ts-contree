@@ -1,7 +1,5 @@
-import express from 'express';
 import { WebSocketServer } from "ws";
 
-const app = express();
 const wss = new WebSocketServer({ port: 8080 });
 
 // WebSocket event handling
