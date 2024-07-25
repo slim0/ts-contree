@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { User, Users, UserUUID } from "../../types/user";
 import { UserNotFoundError } from "../../types/errors";
 
-function retrieveUserbyUUID(
+export function retrieveUserbyUUID(
   users: Users,
   userUuid: UserUUID
 ): Effect.Effect<User, UserNotFoundError> {

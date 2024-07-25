@@ -1,17 +1,18 @@
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import { Clients } from "../types/connection";
+import { retrieveUserbyUUID } from "./core/users";
+import { User, Users, UserUUID } from "../types/user";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
 
-const clients: Clients = {};
+const users: Users = [];
 
 function processReceivedWebSocketMessage(
   webSocketClientConnection: WebSocket,
   message: RawData,
-  userId: string
+  user: User
 ) {
   const data = message.toString();
   console.log("Received message:", data);
@@ -29,11 +30,13 @@ function handleClientDisconnection(userId: string) {
 }
 
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
-  const userId = uuidv4();
-  console.log(`A new client connected. userId=${userId}`);
+  const user: User = { uuid: uuidv4() as UserUUID, name: "John" };
+  console.log(`${user.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
-    processReceivedWebSocketMessage(webSocketClientConnection, message, userId);
+    // TODO: switch / case on Event (Connect, PlayCard, PlayLastCard)
+    processReceivedWebSocketMessage(webSocketClientConnection, message, user);
+    // TODO: return Game
   });
 
   webSocketClientConnection.on("close", () => {
