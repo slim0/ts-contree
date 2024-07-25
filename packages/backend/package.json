@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@types/ws": "^8.5.11",
-    "effect": "^3.4.8",
+    "effect": "^3.5.7",
     "express": "^4.19.2",
     "ts-node": "^10.9.2",
     "uuid": "^10.0.0",

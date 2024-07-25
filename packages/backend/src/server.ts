@@ -1,7 +1,7 @@
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import { Clients } from "./types";
+import { Clients } from "../types/connection";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
