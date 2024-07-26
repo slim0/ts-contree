@@ -1,5 +1,5 @@
 import { exhaustiveCheck } from "./typescript-tools";
-import { Card, Color, CardName } from "shared/src/cards";
+import { Card, Color, CardName } from "shared/src/types/cards";
 
 function isCardAnAsset(card: Card, assetColor: Color): boolean {
   return card.color === assetColor;
@@ -53,7 +53,7 @@ const cardsNameOrdered: CardName[] = [
 function findBestCardOfTwo(
   currentBestCard: Card,
   playedCard: Card,
-  assetColor: Color,
+  assetColor: Color
 ): Card {
   if (isCardAnAsset(currentBestCard, assetColor)) {
     if (isCardAnAsset(playedCard, assetColor)) {
@@ -84,7 +84,7 @@ function findBestCardInList(cards: [Card, ...Card[]], assetColor: Color): Card {
   return cards.reduce(
     (accumulator, currentCard) =>
       findBestCardOfTwo(accumulator, currentCard, assetColor),
-    cards[0],
+    cards[0]
   );
 }
 
@@ -93,7 +93,7 @@ export function countPointsCards(cards: Card[], assetColor: Color): number {
   return cards.reduce(
     (accumulator, currentCard) =>
       accumulator + calculateCardPoints(currentCard, assetColor),
-    totalPoints,
+    totalPoints
   );
 }
 

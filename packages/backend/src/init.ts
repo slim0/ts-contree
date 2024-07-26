@@ -1,6 +1,6 @@
-import { Card, deckOf32Cards } from "shared/src/cards";
-import { Player, Players, Team } from "shared/src/players";
-import { Game } from "shared/src/game";
+import { Card, deckOf32Cards } from "shared/src/types/cards";
+import { Player, Players, Team } from "shared/src/types/players";
+import { Game } from "shared/src/types/game";
 import { shuffleArray } from "./cards";
 import { winner } from "./players";
 

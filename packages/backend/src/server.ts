@@ -1,8 +1,8 @@
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import { retrieveUserbyUUID } from "./core/users";
 import { User, Users, UserUUID } from "../types/user";
+import { messageValidator } from "../../shared/src/zod/webSocketMessage";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
@@ -34,13 +34,13 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   console.log(`${user.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
-    // TODO: switch / case on Event (Connect, PlayCard, PlayLastCard)
+    // TODO: switch / case on Event (Connect, PlayCard, PlayLastCard) using zod
     processReceivedWebSocketMessage(webSocketClientConnection, message, user);
     // TODO: return Game
   });
 
   webSocketClientConnection.on("close", () => {
-    handleClientDisconnection(userId);
+    handleClientDisconnection(user.uuid);
   });
 }
 

@@ -1,7 +1,7 @@
-import { Color, Fold } from "shared/src/cards";
-import { Team } from "shared/src/players";
+import { Color, Fold } from "shared/src/types/cards";
+import { Team } from "shared/src/types/players";
 import { countPointsCards } from "./cards";
-import { Game } from "shared/src/game";
+import { Game } from "shared/src/types/game";
 
 function countFoldPoints(fold: Fold, assetColor: Color): number {
   const foldPoints = countPointsCards(fold.cards, assetColor);
