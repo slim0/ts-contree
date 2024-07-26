@@ -1,14 +1,29 @@
 {
   "include": ["src", "types/*"],
+  "ts-node": {
+    "experimentalSpecifierResolution": "node"
+  },
   "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    // "rootDir": "./src",
-    "outDir": "./dist",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "lib": ["ES2020", "DOM"],
+    "module": "ES2020",
+    "moduleResolution": "Bundler",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "outDir": "./dist",
     "strict": true,
-    "skipLibCheck": true
+    "strictNullChecks": true,
+    "sourceMap": false,
+    "target": "ES2020",
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
