@@ -8,8 +8,9 @@ import {
   messageValidator,
   ServerMessage,
 } from "../../shared/src/zod/webSocketMessage";
-import { Effect, Either, pipe } from "effect";
+import { Effect, Either, Exit, pipe } from "effect";
 import { exhaustiveCheck } from "./typescript-tools";
+import { exists } from "effect/Exit";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
@@ -22,6 +23,7 @@ function treatUserMessage(
 ): Effect.Effect<ServerMessage> {
   switch (userMessage.event) {
     case "connect":
+      console.log("ooo");
       return Effect.succeed({ message: "user connected" });
     case "playCard":
       return Effect.succeed({ message: "user played card" });
@@ -40,7 +42,9 @@ function processReceivedWebSocketMessage(
   const data = message.toString();
   return pipe(
     zodParseEffect(messageValidator, data),
-    Effect.flatMap((message) => treatUserMessage(connectedUser, message))
+    Effect.flatMap((parsedMessage) =>
+      treatUserMessage(connectedUser, parsedMessage)
+    )
   );
 }
 
@@ -54,31 +58,19 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
 
   webSocketClientConnection.on("message", (message) => {
     Effect.runSync(
-      Effect.gen(function* () {
-        const failureOrSuccess = yield* Effect.either(
-          processReceivedWebSocketMessage(message, connectedUser)
-        );
-        if (Either.isRight(failureOrSuccess)) {
-          const serverMessage = failureOrSuccess.right;
-          webSocketServer.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify(serverMessage));
-            }
-          });
-        } else {
-          const errorMessage = failureOrSuccess.left;
-          switch (errorMessage._tag) {
-            case "ZodParseError":
-              console.error(errorMessage.zodError);
-              return webSocketClientConnection.send(
-                JSON.stringify(errorMessage)
-              );
-            default:
-              exhaustiveCheck(errorMessage._tag);
-              throw Error("Unreachable code");
-          }
-        }
-      })
+      pipe(
+        processReceivedWebSocketMessage(message, connectedUser),
+        Effect.mapBoth({
+          onSuccess: (response) => {
+            console.log(response.message);
+            webSocketClientConnection.send(JSON.stringify(response));
+          },
+          onFailure: (errorResponse) => {
+            console.error(errorResponse);
+            webSocketClientConnection.send(JSON.stringify({ error: "error" }));
+          },
+        })
+      )
     );
   });
 
