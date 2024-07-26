@@ -1,12 +1,11 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { z, ZodError } from "zod";
 
-export type ZodParseError = {
-  message: "Unable to parse";
+export class ZodParseError extends Data.TaggedError("ZodParseError")<{
   zodError: ZodError;
-};
+}> {}
 
-export const parseEffect = <T extends z.ZodTypeAny>(
+export const zodParseEffect = <T extends z.ZodTypeAny>(
   schema: T,
   data: unknown
 ): Effect.Effect<z.infer<T>, ZodParseError> => {
@@ -14,9 +13,6 @@ export const parseEffect = <T extends z.ZodTypeAny>(
   if (parsedData.success) {
     return Effect.succeed(parsedData);
   } else {
-    return Effect.fail({
-      message: "Unable to parse",
-      zodError: parsedData.error,
-    });
+    return Effect.fail(new ZodParseError({ zodError: parsedData.error }));
   }
 };

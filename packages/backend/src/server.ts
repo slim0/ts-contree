@@ -2,27 +2,46 @@ import { RawData, WebSocket, WebSocketServer } from "ws";
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 import { User, Users, UserUUID } from "../types/user";
-import { messageValidator } from "../../shared/src/zod/webSocketMessage";
+import { zodParseEffect, ZodParseError } from "../../shared/src/utils/effect";
+import {
+  UserMessage,
+  messageValidator,
+  ServerMessage,
+} from "../../shared/src/zod/webSocketMessage";
+import { Effect, Either, pipe } from "effect";
+import { exhaustiveCheck } from "./typescript-tools";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
 
 const users: Users = [];
 
-function processReceivedWebSocketMessage(
-  webSocketClientConnection: WebSocket,
-  message: RawData,
-  user: User
-) {
-  const data = message.toString();
-  console.log("Received message:", data);
+function treatUserMessage(
+  connectedUser: User,
+  userMessage: UserMessage
+): Effect.Effect<ServerMessage> {
+  switch (userMessage.event) {
+    case "connect":
+      return Effect.succeed({ message: "user connected" });
+    case "playCard":
+      return Effect.succeed({ message: "user played card" });
+    case "playLastCard":
+      return Effect.succeed({ message: "user played last card" });
+    default:
+      exhaustiveCheck(userMessage.event);
+      throw Error("Unreachable code");
+  }
+}
 
-  // Broadcast the message to all connected clients
-  webSocketServer.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      if (client !== webSocketClientConnection) client.send(data);
-    }
-  });
+function processReceivedWebSocketMessage(
+  message: RawData,
+  connectedUser: User
+): Effect.Effect<ServerMessage, ZodParseError> {
+  const data = message.toString();
+  return pipe(
+    zodParseEffect(messageValidator, data),
+    Effect.flatMap((message) => treatUserMessage(connectedUser, message))
+  );
 }
 
 function handleClientDisconnection(userId: string) {
@@ -30,17 +49,36 @@ function handleClientDisconnection(userId: string) {
 }
 
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
-  const user: User = { uuid: uuidv4() as UserUUID, name: "John" };
-  console.log(`${user.uuid} connected`);
+  const connectedUser: User = { uuid: uuidv4() as UserUUID, name: "John" };
+  console.log(`${connectedUser.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
-    // TODO: switch / case on Event (Connect, PlayCard, PlayLastCard) using zod
-    processReceivedWebSocketMessage(webSocketClientConnection, message, user);
-    // TODO: return Game
+    Effect.gen(function* () {
+      const failureOrSuccess = yield* Effect.either(
+        processReceivedWebSocketMessage(message, connectedUser)
+      );
+      if (Either.isRight(failureOrSuccess)) {
+        const serverMessage = failureOrSuccess.right;
+        webSocketServer.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(serverMessage));
+          }
+        });
+      } else {
+        const errorMessage = failureOrSuccess.left;
+        switch (errorMessage._tag) {
+          case "ZodParseError":
+            return webSocketClientConnection.send(JSON.stringify(errorMessage));
+          default:
+            exhaustiveCheck(errorMessage._tag);
+            throw Error("Unreachable code");
+        }
+      }
+    });
   });
 
   webSocketClientConnection.on("close", () => {
-    handleClientDisconnection(user.uuid);
+    handleClientDisconnection(connectedUser.uuid);
   });
 }
 
