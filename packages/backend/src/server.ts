@@ -53,28 +53,33 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   console.log(`${connectedUser.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
-    Effect.gen(function* () {
-      const failureOrSuccess = yield* Effect.either(
-        processReceivedWebSocketMessage(message, connectedUser)
-      );
-      if (Either.isRight(failureOrSuccess)) {
-        const serverMessage = failureOrSuccess.right;
-        webSocketServer.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(serverMessage));
+    Effect.runSync(
+      Effect.gen(function* () {
+        const failureOrSuccess = yield* Effect.either(
+          processReceivedWebSocketMessage(message, connectedUser)
+        );
+        if (Either.isRight(failureOrSuccess)) {
+          const serverMessage = failureOrSuccess.right;
+          webSocketServer.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(serverMessage));
+            }
+          });
+        } else {
+          const errorMessage = failureOrSuccess.left;
+          switch (errorMessage._tag) {
+            case "ZodParseError":
+              console.error(errorMessage.zodError);
+              return webSocketClientConnection.send(
+                JSON.stringify(errorMessage)
+              );
+            default:
+              exhaustiveCheck(errorMessage._tag);
+              throw Error("Unreachable code");
           }
-        });
-      } else {
-        const errorMessage = failureOrSuccess.left;
-        switch (errorMessage._tag) {
-          case "ZodParseError":
-            return webSocketClientConnection.send(JSON.stringify(errorMessage));
-          default:
-            exhaustiveCheck(errorMessage._tag);
-            throw Error("Unreachable code");
         }
-      }
-    });
+      })
+    );
   });
 
   webSocketClientConnection.on("close", () => {
