@@ -49,7 +49,7 @@ function handleClientDisconnection(userId: string) {
 }
 
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
-  const connectedUser: User = { uuid: uuidv4() as UserUUID, name: "John" };
+  const connectedUser: User = { uuid: uuidv4() as UserUUID };
   console.log(`${connectedUser.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
