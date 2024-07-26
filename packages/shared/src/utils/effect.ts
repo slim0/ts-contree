@@ -5,11 +5,13 @@ export class ZodParseError extends Data.TaggedError("ZodParseError")<{
   zodError: ZodError;
 }> {}
 
-export const zodParseEffect = <T extends z.ZodTypeAny>(
-  schema: T,
-  data: unknown
+type NotFunction<T> = T extends Function ? never : T;
+
+export const zodParseEffect = <T extends z.ZodTypeAny, U>(
+  zodSchema: T,
+  data: NotFunction<U>
 ): Effect.Effect<z.infer<T>, ZodParseError> => {
-  const parsedData = schema.safeParse(data);
+  const parsedData = zodSchema.safeParse(data);
   if (parsedData.success) {
     return Effect.succeed(parsedData);
   } else {
