@@ -1,14 +1,15 @@
+import { User, Users, UserUUID } from "backend/types/user";
 import { Effect, pipe } from "effect";
 import express from "express";
-import { v4 as uuidv4 } from "uuid";
-import { RawData, WebSocket, WebSocketServer } from "ws";
-import { zodParseEffect, ZodParseError } from "../../shared/src/utils/effect";
+import { ServerMessageError } from "shared/src/errors/webSocketMessage";
+import { zodParseEffect, ZodParseError } from "shared/src/utils/effect";
 import {
   messageValidator,
   ServerMessage,
   UserMessage,
-} from "../../shared/src/zod/webSocketMessage";
-import { User, Users, UserUUID } from "../types/user";
+} from "shared/src/zod/webSocketMessage";
+import { v4 as uuidv4 } from "uuid";
+import { RawData, WebSocket, WebSocketServer } from "ws";
 import { exhaustiveCheck } from "./typescript-tools";
 
 const app = express();
@@ -22,7 +23,6 @@ function treatUserMessage(
 ): Effect.Effect<ServerMessage> {
   switch (userMessage.event) {
     case "connect":
-      console.log("ooo");
       return Effect.succeed({ message: "user connected" });
     case "playCard":
       return Effect.succeed({ message: "user played card" });
@@ -37,7 +37,7 @@ function treatUserMessage(
 function processReceivedWebSocketMessage(
   message: RawData,
   connectedUser: User
-): Effect.Effect<ServerMessage, ZodParseError> {
+): Effect.Effect<ServerMessage, ServerMessageError<ZodParseError>> {
   const data = message.toString();
   return pipe(
     zodParseEffect(messageValidator, data),
@@ -53,7 +53,7 @@ function handleClientDisconnection(userId: string) {
 
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   const connectedUser: User = { uuid: uuidv4() as UserUUID };
-  console.log(`${connectedUser.uuid} connected`);
+  console.log(`Client with userId=${connectedUser.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
     Effect.runSync(
@@ -61,12 +61,11 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
         processReceivedWebSocketMessage(message, connectedUser),
         Effect.mapBoth({
           onSuccess: (response) => {
-            console.log(response.message);
             webSocketClientConnection.send(JSON.stringify(response));
           },
           onFailure: (errorResponse) => {
             console.error(errorResponse);
-            webSocketClientConnection.send(JSON.stringify({ error: "error" }));
+            webSocketClientConnection.send(JSON.stringify(errorResponse));
           },
         })
       )
