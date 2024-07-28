@@ -43,7 +43,11 @@ function processReceivedWebSocketMessage(
     zodParseEffect(messageValidator, data),
     Effect.flatMap((parsedMessage) =>
       treatUserMessage(connectedUser, parsedMessage)
-    )
+    ),
+    Effect.mapError((error) => ({
+      message: "Failed to process received webSocket message",
+      error,
+    }))
   );
 }
 
