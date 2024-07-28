@@ -1,5 +1,5 @@
-import { exhaustiveCheck } from "./typescript-tools";
-import { Card, Color, CardName } from "shared/src/types/cards";
+import { exhaustiveCheck } from "backend/src/typescript-tools";
+import { Card, CardName, Color } from "shared/src/types/cards";
 
 function isCardAnAsset(card: Card, assetColor: Color): boolean {
   return card.color === assetColor;

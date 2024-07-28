@@ -1,16 +1,15 @@
-import { RawData, WebSocket, WebSocketServer } from "ws";
+import { Effect, pipe } from "effect";
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import { User, Users, UserUUID } from "../types/user";
+import { RawData, WebSocket, WebSocketServer } from "ws";
 import { zodParseEffect, ZodParseError } from "../../shared/src/utils/effect";
 import {
-  UserMessage,
   messageValidator,
   ServerMessage,
+  UserMessage,
 } from "../../shared/src/zod/webSocketMessage";
-import { Effect, Either, Exit, pipe } from "effect";
+import { User, Users, UserUUID } from "../types/user";
 import { exhaustiveCheck } from "./typescript-tools";
-import { exists } from "effect/Exit";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });

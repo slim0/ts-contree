@@ -1,6 +1,6 @@
 import { Effect } from "effect";
-import { User, Users, UserUUID } from "../../types/user";
 import { UserNotFoundError } from "../../types/errors";
+import { User, Users, UserUUID } from "../../types/user";
 
 export function retrieveUserbyUUID(
   users: Users,

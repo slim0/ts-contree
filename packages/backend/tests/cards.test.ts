@@ -1,11 +1,11 @@
-import { expect, test } from "vitest";
-import { countPointsCards, findBestCardInList } from "backend/src/cards";
+import { countPointsCards, findBestCardInList } from "backend/src/core/cards";
 import {
   deckOf32Cards,
   jackOfHearts,
   nineOfHearts,
   tenOfHearts,
 } from "shared/src/types/cards";
+import { expect, test } from "vitest";
 
 test("find best card in list without assets", () => {
   expect(
