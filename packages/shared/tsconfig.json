@@ -1,9 +1,26 @@
 {
+  "include": ["src"],
   "compilerOptions": {
-    "outDir": "./dist",
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "inlineSources": false,
+    "lib": ["es2020", "dom"],
+    "module": "ES2020",
+    "moduleResolution": "Bundler",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "outDir": "dist",
     "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true
-  },
-  "include": ["src"]
+    "strictNullChecks": true,
+    "sourceMap": false,
+    "target": "ES2020",
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "noEmit": true
+  }
 }
