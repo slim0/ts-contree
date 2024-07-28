@@ -20,162 +20,162 @@ export type Card = {
   color: Color;
 };
 
-const asOfSpades: Card = {
+export const asOfSpades: Card = {
   name: "As",
   color: "spades",
 };
 
-const sevenOfSpades: Card = {
+export const sevenOfSpades: Card = {
   name: "Seven",
   color: "spades",
 };
 
-const eightOfSpades: Card = {
+export const eightOfSpades: Card = {
   name: "Eight",
   color: "spades",
 };
 
-const nineOfSpades: Card = {
+export const nineOfSpades: Card = {
   name: "Nine",
   color: "spades",
 };
 
-const tenOfSpades: Card = {
+export const tenOfSpades: Card = {
   name: "Ten",
   color: "spades",
 };
 
-const jackOfSpades: Card = {
+export const jackOfSpades: Card = {
   name: "Jack",
   color: "spades",
 };
 
-const queenOfSpades: Card = {
+export const queenOfSpades: Card = {
   name: "Queen",
   color: "spades",
 };
 
-const kingOfSpades: Card = {
+export const kingOfSpades: Card = {
   name: "King",
   color: "spades",
 };
 
-const asOfClubs: Card = {
+export const asOfClubs: Card = {
   name: "As",
   color: "clubs",
 };
 
-const sevenOfClubs: Card = {
+export const sevenOfClubs: Card = {
   name: "Seven",
   color: "clubs",
 };
 
-const eightOfClubs: Card = {
+export const eightOfClubs: Card = {
   name: "Eight",
   color: "clubs",
 };
 
-const nineOfClubs: Card = {
+export const nineOfClubs: Card = {
   name: "Nine",
   color: "clubs",
 };
 
-const tenOfClubs: Card = {
+export const tenOfClubs: Card = {
   name: "Ten",
   color: "clubs",
 };
 
-const jackOfClubs: Card = {
+export const jackOfClubs: Card = {
   name: "Jack",
   color: "clubs",
 };
 
-const queenOfClubs: Card = {
+export const queenOfClubs: Card = {
   name: "Queen",
   color: "clubs",
 };
 
-const kingOfClubs: Card = {
+export const kingOfClubs: Card = {
   name: "King",
   color: "clubs",
 };
 
-const asOfHearts: Card = {
+export const asOfHearts: Card = {
   name: "As",
   color: "hearts",
 };
 
-const sevenOfHearts: Card = {
+export const sevenOfHearts: Card = {
   name: "Seven",
   color: "hearts",
 };
 
-const eightOfHearts: Card = {
+export const eightOfHearts: Card = {
   name: "Eight",
   color: "hearts",
 };
 
-const nineOfHearts: Card = {
+export const nineOfHearts: Card = {
   name: "Nine",
   color: "hearts",
 };
 
-const tenOfHearts: Card = {
+export const tenOfHearts: Card = {
   name: "Ten",
   color: "hearts",
 };
 
-const jackOfHearts: Card = {
+export const jackOfHearts: Card = {
   name: "Jack",
   color: "hearts",
 };
 
-const queenOfHearts: Card = {
+export const queenOfHearts: Card = {
   name: "Queen",
   color: "hearts",
 };
 
-const kingOfHearts: Card = {
+export const kingOfHearts: Card = {
   name: "King",
   color: "hearts",
 };
 
-const asOfDiamonds: Card = {
+export const asOfDiamonds: Card = {
   name: "As",
   color: "diamonds",
 };
 
-const sevenOfDiamonds: Card = {
+export const sevenOfDiamonds: Card = {
   name: "Seven",
   color: "diamonds",
 };
 
-const eightOfDiamonds: Card = {
+export const eightOfDiamonds: Card = {
   name: "Eight",
   color: "diamonds",
 };
 
-const nineOfDiamonds: Card = {
+export const nineOfDiamonds: Card = {
   name: "Nine",
   color: "diamonds",
 };
 
-const tenOfDiamonds: Card = {
+export const tenOfDiamonds: Card = {
   name: "Ten",
   color: "diamonds",
 };
 
-const jackOfDiamonds: Card = {
+export const jackOfDiamonds: Card = {
   name: "Jack",
   color: "diamonds",
 };
 
-const queenOfDiamonds: Card = {
+export const queenOfDiamonds: Card = {
   name: "Queen",
   color: "diamonds",
 };
 
-const kingOfDiamonds: Card = {
+export const kingOfDiamonds: Card = {
   name: "King",
   color: "diamonds",
 };

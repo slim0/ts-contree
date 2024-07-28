@@ -80,7 +80,10 @@ function findBestCardOfTwo(
   }
 }
 
-function findBestCardInList(cards: [Card, ...Card[]], assetColor: Color): Card {
+export function findBestCardInList(
+  cards: [Card, ...Card[]],
+  assetColor: Color
+): Card {
   return cards.reduce(
     (accumulator, currentCard) =>
       findBestCardOfTwo(accumulator, currentCard, assetColor),
@@ -106,8 +109,3 @@ export function shuffleArray<A>(array: A[]): A[] {
   }
   return array;
 }
-
-// TODO: tests
-// console.log(findBestCard([nineOfHearts, tenOfHearts, jackOfHearts], "diamonds"))
-// console.log(countPointsCards([nineOfHearts, tenOfHearts, jackOfHearts, jackOfDiamonds], "diamonds"))
-// console.log(countPointsCards(deckOf32Cards, "diamonds"))
