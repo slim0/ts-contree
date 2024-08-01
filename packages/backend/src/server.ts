@@ -1,7 +1,8 @@
-import { User, Users, UserUUID } from "backend/types/user";
-import { Effect, pipe } from "effect";
+import { Effect, Match, Option, pipe } from "effect";
 import express from "express";
 import { ServerMessageError } from "shared/src/errors/webSocketMessage";
+import { Game } from "shared/src/types/game";
+import { Player, PlayerUUID, Team } from "shared/src/types/players";
 import { zodParseEffect, ZodParseError } from "shared/src/utils/effect";
 import {
   messageValidator,
@@ -10,33 +11,76 @@ import {
 } from "shared/src/zod/webSocketMessage";
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
-import { exhaustiveCheck } from "./typescript-tools";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
 
-const users: Users = [];
+const waitingPlayers: Player[] = [];
+const games: Game[] = [];
 
+function initGame(players: [Player, Player, Player, Player]): Game {
+  const teamA: Team = {
+    name: "TeamA",
+    players: [players[0], players[2]],
+    score: 0,
+  };
+  const teamB: Team = {
+    name: "TeamB",
+    players: [players[1], players[3]],
+    score: 0,
+  };
+  return {
+    teams: [teamA, teamB],
+    playerOrder: players,
+  };
+}
+
+function searchGameForPlayer(
+  player: Player,
+  waitingPlayers: Player[]
+): Effect.Effect<Option.Option<Game>> {
+  return Effect.succeed(
+    initGame([
+      player,
+      waitingPlayers.shift()!,
+      waitingPlayers.shift()!,
+      waitingPlayers.shift()!,
+    ])
+  ).pipe(Effect.when(() => waitingPlayers.length >= 3));
+}
 function treatUserMessage(
-  connectedUser: User,
+  connectedUser: Player,
   userMessage: UserMessage
 ): Effect.Effect<ServerMessage> {
-  switch (userMessage.event) {
-    case "connect":
-      return Effect.succeed({ message: "user connected" });
-    case "playCard":
-      return Effect.succeed({ message: "user played card" });
-    case "playLastCard":
-      return Effect.succeed({ message: "user played last card" });
-    default:
-      exhaustiveCheck(userMessage.event);
-      throw Error("Unreachable code");
-  }
+  return Match.value(userMessage.event).pipe(
+    Match.when("connect", () => {
+      return pipe(
+        searchGameForPlayer(connectedUser, waitingPlayers),
+        Effect.map((maybeGame) => {
+          return Option.match(maybeGame, {
+            onSome: () => {
+              return { message: "user connected", data: null };
+            },
+            onNone: () => {
+              return { message: "user connected", data: null };
+            },
+          });
+        })
+      );
+    }),
+    Match.when("playCard", () => {
+      return Effect.succeed({ message: "user played card", data: null });
+    }),
+    Match.when("playLastCard", () => {
+      return Effect.succeed({ message: "user played last card", data: null });
+    }),
+    Match.exhaustive
+  );
 }
 
 function processReceivedWebSocketMessage(
   message: RawData,
-  connectedUser: User
+  connectedUser: Player
 ): Effect.Effect<ServerMessage, ServerMessageError<ZodParseError>> {
   const data = message.toString();
   return pipe(
@@ -56,7 +100,7 @@ function handleClientDisconnection(userId: string) {
 }
 
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
-  const connectedUser: User = { uuid: uuidv4() as UserUUID };
+  const connectedUser: Player = { uuid: uuidv4() as PlayerUUID };
   console.log(`Client with userId=${connectedUser.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {

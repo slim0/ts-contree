@@ -1,6 +1,10 @@
-import { Players, Team } from "./players";
+import { fourPlayers, teamValidator } from "./players";
 
-export type Game = {
-  teams: [Team, Team];
-  playerOrder: Players;
-};
+import { z } from "zod";
+
+export const gameValidator = z.object({
+  teams: z.array(teamValidator).length(2),
+  playerOrder: fourPlayers,
+});
+
+export type Game = z.infer<typeof gameValidator>;

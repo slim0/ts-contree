@@ -1,12 +1,17 @@
 import { Card, deckOf32Cards } from "shared/src/types/cards";
 import { Game } from "shared/src/types/game";
-import { Player, Players, Team } from "shared/src/types/players";
+import {
+  FourPlayers,
+  Player,
+  PlayerUUID,
+  Team,
+} from "shared/src/types/players";
 import { shuffleArray } from "./cards";
 import { winner } from "./players";
 
-function initPlayer(name: string, cards: Card[]): Player {
+function initPlayer(uuid: PlayerUUID, cards: Card[]): Player {
   return {
-    name,
+    uuid,
     hand: cards,
     folds: [],
   };
@@ -30,7 +35,7 @@ function initGame(): Game {
   const playerB: Player = initPlayer("Étienne", shuffledCards.slice(8, 17));
   const playerC: Player = initPlayer("Hélène", shuffledCards.slice(17, 25));
   const playerD: Player = initPlayer("Tom", shuffledCards.slice(25, 32));
-  const players: Players = [playerA, playerB, playerC, playerD];
+  const players: FourPlayers = [playerA, playerB, playerC, playerD];
   console.log(JSON.stringify(players));
   const teamA: Team = initTeam("Us", playerA, playerC);
   const teamB: Team = initTeam("Them", playerB, playerD);

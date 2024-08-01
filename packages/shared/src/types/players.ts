@@ -1,15 +1,24 @@
-import { Card, Fold } from "./cards";
+import { z } from "zod";
 
-export type Player = {
-  name: string;
-  hand: Card[];
-  folds: Fold[];
-};
+const playerUUIDValidator = z.string().uuid().brand("PlayerUUID");
+export type PlayerUUID = z.infer<typeof playerUUIDValidator>;
 
-export type Players = [Player, Player, Player, Player];
+const playerValidator = z.object({
+  uuid: playerUUIDValidator,
+});
 
-export type Team = {
-  name: string;
-  players: [Player, Player];
-  score: number;
-};
+export type Player = z.infer<typeof playerValidator>;
+
+export const fourPlayers = z.array(playerValidator).length(4);
+export type FourPlayers = z.infer<typeof fourPlayers>;
+
+const twoPlayers = z.array(playerValidator).length(2);
+export type TwoPLayers = z.infer<typeof twoPlayers>;
+
+export const teamValidator = z.object({
+  name: z.string(),
+  players: twoPlayers,
+  score: z.number().nonnegative(),
+});
+
+export type Team = z.infer<typeof teamValidator>;
