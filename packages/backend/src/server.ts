@@ -2,7 +2,7 @@ import { Effect, Match, Option, pipe } from "effect";
 import express from "express";
 import { ServerMessageError } from "shared/src/errors/webSocketMessage";
 import { Game } from "shared/src/types/game";
-import { Player, PlayerUUID, Team } from "shared/src/types/players";
+import { Player, PlayerUUID } from "shared/src/types/players";
 import { zodParseEffect, ZodParseError } from "shared/src/utils/effect";
 import {
   messageValidator,
@@ -11,6 +11,7 @@ import {
 } from "shared/src/zod/webSocketMessage";
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
+import { searchGameForPlayer } from "./core/game";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
@@ -18,36 +19,6 @@ const webSocketServer = new WebSocketServer({ noServer: true });
 const waitingPlayers: Player[] = [];
 const games: Game[] = [];
 
-function initGame(players: [Player, Player, Player, Player]): Game {
-  const teamA: Team = {
-    name: "TeamA",
-    players: [players[0], players[2]],
-    score: 0,
-  };
-  const teamB: Team = {
-    name: "TeamB",
-    players: [players[1], players[3]],
-    score: 0,
-  };
-  return {
-    teams: [teamA, teamB],
-    playerOrder: players,
-  };
-}
-
-function searchGameForPlayer(
-  player: Player,
-  waitingPlayers: Player[]
-): Effect.Effect<Option.Option<Game>> {
-  return Effect.succeed(
-    initGame([
-      player,
-      waitingPlayers.shift()!,
-      waitingPlayers.shift()!,
-      waitingPlayers.shift()!,
-    ])
-  ).pipe(Effect.when(() => waitingPlayers.length >= 3));
-}
 function treatUserMessage(
   connectedUser: Player,
   userMessage: UserMessage
@@ -58,8 +29,11 @@ function treatUserMessage(
         searchGameForPlayer(connectedUser, waitingPlayers),
         Effect.map((maybeGame) => {
           return Option.match(maybeGame, {
-            onSome: () => {
-              return { message: "user connected", data: null };
+            onSome: (game) => {
+              return {
+                message: "user connected",
+                data: game,
+              };
             },
             onNone: () => {
               return { message: "user connected", data: null };

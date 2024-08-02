@@ -1,15 +1,7 @@
-import { Effect } from "effect";
 import { Color, Fold } from "shared/src/types/cards";
 import { Game } from "shared/src/types/game";
-import { Player, Team } from "shared/src/types/players";
+import { Team } from "shared/src/types/players";
 import { countPointsCards } from "./cards";
-
-export function createGamefromWaitingPlayers(
-  waitingPlayers: Player[]
-): Effect.Effect<Game | undefined> {
-  if (waitingPlayers.length >= 4) {
-  }
-}
 
 function countFoldPoints(fold: Fold, assetColor: Color): number {
   const foldPoints = countPointsCards(fold.cards, assetColor);
