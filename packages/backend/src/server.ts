@@ -12,6 +12,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import { searchGameForPlayer } from "./core/game";
+import { initialWaitingPlayerState, WaitingPlayerState } from "./core/state";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
@@ -22,11 +23,11 @@ const games: Game[] = [];
 function treatUserMessage(
   connectedUser: Player,
   userMessage: UserMessage
-): Effect.Effect<ServerMessage> {
+): Effect.Effect<ServerMessage, never, WaitingPlayerState> {
   return Match.value(userMessage.event).pipe(
     Match.when("connect", () => {
       return pipe(
-        searchGameForPlayer(connectedUser, waitingPlayers),
+        searchGameForPlayer(connectedUser),
         Effect.map((maybeGame) => {
           return Option.match(maybeGame, {
             onSome: (game) => {
@@ -55,7 +56,11 @@ function treatUserMessage(
 function processReceivedWebSocketMessage(
   message: RawData,
   connectedUser: Player
-): Effect.Effect<ServerMessage, ServerMessageError<ZodParseError>> {
+): Effect.Effect<
+  ServerMessage,
+  ServerMessageError<ZodParseError>,
+  WaitingPlayerState
+> {
   const data = message.toString();
   return pipe(
     zodParseEffect(messageValidator, data),
@@ -79,17 +84,21 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
 
   webSocketClientConnection.on("message", (message) => {
     Effect.runSync(
-      pipe(
-        processReceivedWebSocketMessage(message, connectedUser),
-        Effect.mapBoth({
-          onSuccess: (response) => {
-            webSocketClientConnection.send(JSON.stringify(response));
-          },
-          onFailure: (errorResponse) => {
-            console.error(errorResponse);
-            webSocketClientConnection.send(JSON.stringify(errorResponse));
-          },
-        })
+      Effect.provideServiceEffect(
+        pipe(
+          processReceivedWebSocketMessage(message, connectedUser),
+          Effect.mapBoth({
+            onSuccess: (response) => {
+              webSocketClientConnection.send(JSON.stringify(response));
+            },
+            onFailure: (errorResponse) => {
+              console.error(errorResponse);
+              webSocketClientConnection.send(JSON.stringify(errorResponse));
+            },
+          })
+        ),
+        WaitingPlayerState,
+        initialWaitingPlayerState
       )
     );
   });
