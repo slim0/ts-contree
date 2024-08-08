@@ -20,8 +20,10 @@ function initGame(players: [Player, Player, Player, Player]): Game {
   };
 }
 
-function getThreeWaitingPlayers(): Effect.Effect<
-  Option.Option<[Player, Player, Player]>,
+function getPlayers(
+  player: Player
+): Effect.Effect<
+  Option.Option<[Player, Player, Player, Player]>,
   never,
   WaitingPlayerState
 > {
@@ -29,14 +31,16 @@ function getThreeWaitingPlayers(): Effect.Effect<
     Effect.andThen((waitingPlayersState) => Ref.get(waitingPlayersState)),
     Effect.map((waitingPlayersChunk) => {
       if (Chunk.size(waitingPlayersChunk) >= 3) {
-        return Option.some(
-          Chunk.toArray(Chunk.drop(waitingPlayersChunk, 3)) as [
+        return Option.some([
+          player,
+          ...(Chunk.toArray(Chunk.drop(waitingPlayersChunk, 3)) as [
             Player,
             Player,
             Player,
-          ]
-        );
+          ]),
+        ]);
       } else {
+        Chunk.appendAll(waitingPlayersChunk, Chunk.make([player]));
         return Option.none();
       }
     })
@@ -47,11 +51,11 @@ export function searchGameForPlayer(
   player: Player
 ): Effect.Effect<Option.Option<Game>, never, WaitingPlayerState> {
   return WaitingPlayerState.pipe(
-    getThreeWaitingPlayers,
-    Effect.map((maybeThreePlayers) => {
-      return Option.match(maybeThreePlayers, {
-        onSome: (threePlayers) => {
-          return Option.some(initGame([player, ...threePlayers]));
+    Effect.flatMap(() => getPlayers(player)),
+    Effect.map((maybePlayers) => {
+      return Option.match(maybePlayers, {
+        onSome: (players) => {
+          return Option.some(initGame(players));
         },
         onNone: () => {
           return Option.none();
