@@ -40,7 +40,7 @@ function getPlayers(
           ]),
         ]);
       } else {
-        Chunk.appendAll(waitingPlayersChunk, Chunk.make([player]));
+        Chunk.append(waitingPlayersChunk, player);
         return Option.none();
       }
     })
