@@ -1,10 +1,9 @@
-import { fourPlayers, teamValidator } from "./players";
+import { Schema as S } from "@effect/schema";
+import { fourPlayers, teamSchema } from "./players";
 
-import { z } from "zod";
-
-export const gameValidator = z.object({
-  teams: z.array(teamValidator).length(2),
+export const gameSchema = S.Struct({
+  teams: S.Array(teamSchema).pipe(S.itemsCount(2)),
   playerOrder: fourPlayers,
 });
 
-export type Game = z.infer<typeof gameValidator>;
+export type Game = typeof gameSchema.Type;

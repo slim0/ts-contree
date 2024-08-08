@@ -1,24 +1,24 @@
-import { z } from "zod";
+import { Schema as S } from "@effect/schema";
 
-const playerUUIDValidator = z.string().uuid().brand("PlayerUUID");
-export type PlayerUUID = z.infer<typeof playerUUIDValidator>;
+const playerUUIDSchema = S.UUID.pipe(S.brand("PlayerUUID"));
+export type PlayerUUID = typeof playerUUIDSchema.Type;
 
-const playerValidator = z.object({
-  uuid: playerUUIDValidator,
+const playerSchema = S.Struct({
+  uuid: playerUUIDSchema,
 });
 
-export type Player = z.infer<typeof playerValidator>;
+export type Player = typeof playerSchema.Type;
 
-export const fourPlayers = z.array(playerValidator).length(4);
-export type FourPlayers = z.infer<typeof fourPlayers>;
+export const fourPlayers = S.Array(playerSchema).pipe(S.itemsCount(4));
+export type FourPlayers = typeof fourPlayers.Type;
 
-const twoPlayers = z.array(playerValidator).length(2);
-export type TwoPLayers = z.infer<typeof twoPlayers>;
+const twoPlayers = S.Array(playerSchema).pipe(S.itemsCount(2));
+export type TwoPLayers = typeof twoPlayers.Type;
 
-export const teamValidator = z.object({
-  name: z.string(),
+export const teamSchema = S.Struct({
+  name: S.String,
   players: twoPlayers,
-  score: z.number().nonnegative(),
+  score: S.NonNegative,
 });
 
-export type Team = z.infer<typeof teamValidator>;
+export type Team = typeof teamSchema.Type;

@@ -1,13 +1,14 @@
+import { Schema as S } from "@effect/schema";
+import { ParseError } from "@effect/schema/ParseResult";
 import { Effect, Match, Option, pipe } from "effect";
 import express from "express";
 import { ServerMessageError } from "shared/src/errors/webSocketMessage";
-import { Player, PlayerUUID } from "shared/src/types/players";
-import { zodParseEffect, ZodParseError } from "shared/src/utils/effect";
 import {
-  messageValidator,
+  messageSchema,
   ServerMessage,
   UserMessage,
-} from "shared/src/zod/webSocketMessage";
+} from "shared/src/schemas/webSocketMessage";
+import { Player, PlayerUUID } from "shared/src/types/players";
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import { searchGameForPlayer } from "./core/game";
@@ -54,17 +55,17 @@ function processReceivedWebSocketMessage(
   connectedUser: Player
 ): Effect.Effect<
   ServerMessage,
-  ServerMessageError<ZodParseError>,
+  ServerMessageError<ParseError>,
   WaitingPlayerState
 > {
   return pipe(
-    zodParseEffect(messageValidator, message.toString()),
+    S.decodeUnknownEither(messageSchema)(message.toString()),
     Effect.flatMap((parsedMessage) =>
       treatUserMessage(connectedUser, parsedMessage)
     ),
-    Effect.mapError((error) => ({
-      message: "Failed to process received webSocket message",
-      error,
+    Effect.mapError((schemaParseError) => ({
+      message: schemaParseError.message,
+      error: schemaParseError,
     }))
   );
 }
