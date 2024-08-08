@@ -1,7 +1,6 @@
 import { Effect, Match, Option, pipe } from "effect";
 import express from "express";
 import { ServerMessageError } from "shared/src/errors/webSocketMessage";
-import { Game } from "shared/src/types/game";
 import { Player, PlayerUUID } from "shared/src/types/players";
 import { zodParseEffect, ZodParseError } from "shared/src/utils/effect";
 import {
@@ -16,9 +15,6 @@ import { initialWaitingPlayerState, WaitingPlayerState } from "./core/state";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
-
-const waitingPlayers: Player[] = [];
-const games: Game[] = [];
 
 function treatUserMessage(
   connectedUser: Player,
@@ -61,9 +57,8 @@ function processReceivedWebSocketMessage(
   ServerMessageError<ZodParseError>,
   WaitingPlayerState
 > {
-  const data = message.toString();
   return pipe(
-    zodParseEffect(messageValidator, data),
+    zodParseEffect(messageValidator, message.toString()),
     Effect.flatMap((parsedMessage) =>
       treatUserMessage(connectedUser, parsedMessage)
     ),

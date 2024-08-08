@@ -20,20 +20,43 @@ function initGame(players: [Player, Player, Player, Player]): Game {
   };
 }
 
+function getThreeWaitingPlayers(): Effect.Effect<
+  Option.Option<[Player, Player, Player]>,
+  never,
+  WaitingPlayerState
+> {
+  return WaitingPlayerState.pipe(
+    Effect.andThen((waitingPlayersState) => Ref.get(waitingPlayersState)),
+    Effect.map((waitingPlayersChunk) => {
+      if (Chunk.size(waitingPlayersChunk) >= 3) {
+        return Option.some(
+          Chunk.toArray(Chunk.drop(waitingPlayersChunk, 3)) as [
+            Player,
+            Player,
+            Player,
+          ]
+        );
+      } else {
+        return Option.none();
+      }
+    })
+  );
+}
+
 export function searchGameForPlayer(
   player: Player
 ): Effect.Effect<Option.Option<Game>, never, WaitingPlayerState> {
   return WaitingPlayerState.pipe(
-    Effect.bind("players", (ref) => {
-      const chunk = Ref.get(ref);
-      return chunk.pipe(Effect.tap((el) => Chunk.drop(el, 3)));
-    }),
-    Effect.map(({ players }) => {
-      const readonlyArray = Chunk.toReadonlyArray(players);
-      const player2 = readonlyArray[0];
-      const player3 = readonlyArray[1];
-      const player4 = readonlyArray[2];
-      return Option.some(initGame([player, player2, player3, player4]));
+    getThreeWaitingPlayers,
+    Effect.map((maybeThreePlayers) => {
+      return Option.match(maybeThreePlayers, {
+        onSome: (threePlayers) => {
+          return Option.some(initGame([player, ...threePlayers]));
+        },
+        onNone: () => {
+          return Option.none();
+        },
+      });
     })
   );
 }
