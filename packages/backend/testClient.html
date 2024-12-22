@@ -27,7 +27,9 @@
       // Function to send messages
       function sendMessage() {
         const messageInput = document.getElementById("messageInput");
-        const message = messageInput.value;
+        const message = JSON.stringify({
+          event: messageInput.value,
+        });
         socket.send(message);
         messageInput.value = "";
       }

@@ -59,7 +59,7 @@ function processReceivedWebSocketMessage(
   WaitingPlayerState
 > {
   return pipe(
-    S.decodeUnknownEither(messageSchema)(message.toString()),
+    S.decodeUnknownEither(messageSchema)(JSON.parse(message.toString())),
     Effect.flatMap((parsedMessage) =>
       treatUserMessage(connectedUser, parsedMessage)
     ),
@@ -80,7 +80,7 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
 
   webSocketClientConnection.on("message", (message) => {
     Effect.runSync(
-      Effect.provideServiceEffect(
+      Effect.provideService(
         pipe(
           processReceivedWebSocketMessage(message, connectedUser),
           Effect.mapBoth({
