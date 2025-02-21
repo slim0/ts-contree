@@ -80,7 +80,7 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
 
   webSocketClientConnection.on("message", (message) => {
     Effect.runSync(
-      Effect.provideService(
+      Effect.provideServiceEffect(
         pipe(
           processReceivedWebSocketMessage(message, connectedUser),
           Effect.mapBoth({
