@@ -3,5 +3,10 @@
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "always"
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#362A2C",
+    "titleBar.activeBackground": "#4C3B3D",
+    "titleBar.activeForeground": "#FBFAFA"
   }
 }

@@ -12,21 +12,20 @@ import { Player, PlayerUUID } from "shared/src/types/players";
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import { searchGameForPlayer } from "./core/game";
-import { initialWaitingPlayerState, WaitingPlayerState } from "./core/state";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
 
 function treatUserMessage(
   connectedUser: Player,
-  userMessage: UserMessage
-): Effect.Effect<ServerMessage, never, WaitingPlayerState> {
+  userMessage: UserMessage,
+): Effect.Effect<ServerMessage> {
   return Match.value(userMessage.event).pipe(
     Match.when("connect", () => {
       return pipe(
         searchGameForPlayer(connectedUser),
-        Effect.map((maybeGame) => {
-          return Option.match(maybeGame, {
+        Effect.map((maybeGame) =>
+          Option.match(maybeGame, {
             onSome: (game) => {
               return {
                 message: "user connected",
@@ -36,8 +35,8 @@ function treatUserMessage(
             onNone: () => {
               return { message: "user connected", data: null };
             },
-          });
-        })
+          }),
+        ),
       );
     }),
     Match.when("playCard", () => {
@@ -46,27 +45,23 @@ function treatUserMessage(
     Match.when("playLastCard", () => {
       return Effect.succeed({ message: "user played last card", data: null });
     }),
-    Match.exhaustive
+    Match.exhaustive,
   );
 }
 
 function processReceivedWebSocketMessage(
   message: RawData,
-  connectedUser: Player
-): Effect.Effect<
-  ServerMessage,
-  ServerMessageError<ParseError>,
-  WaitingPlayerState
-> {
+  connectedUser: Player,
+): Effect.Effect<ServerMessage, ServerMessageError<ParseError>> {
   return pipe(
     S.decodeUnknownEither(messageSchema)(JSON.parse(message.toString())),
-    Effect.flatMap((parsedMessage) =>
-      treatUserMessage(connectedUser, parsedMessage)
+    Effect.andThen((parsedMessage) =>
+      treatUserMessage(connectedUser, parsedMessage),
     ),
     Effect.mapError((schemaParseError) => ({
       message: schemaParseError.message,
       error: schemaParseError,
-    }))
+    })),
   );
 }
 
@@ -80,22 +75,18 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
 
   webSocketClientConnection.on("message", (message) => {
     Effect.runSync(
-      Effect.provideServiceEffect(
-        pipe(
-          processReceivedWebSocketMessage(message, connectedUser),
-          Effect.mapBoth({
-            onSuccess: (response) => {
-              webSocketClientConnection.send(JSON.stringify(response));
-            },
-            onFailure: (errorResponse) => {
-              console.error(errorResponse);
-              webSocketClientConnection.send(JSON.stringify(errorResponse));
-            },
-          })
-        ),
-        WaitingPlayerState,
-        initialWaitingPlayerState
-      )
+      pipe(
+        processReceivedWebSocketMessage(message, connectedUser),
+        Effect.mapBoth({
+          onSuccess: (response) => {
+            webSocketClientConnection.send(JSON.stringify(response));
+          },
+          onFailure: (errorResponse) => {
+            console.error(errorResponse);
+            webSocketClientConnection.send(JSON.stringify(errorResponse));
+          },
+        }),
+      ),
     );
   });
 

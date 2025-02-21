@@ -1,7 +1,7 @@
-import { Chunk, Effect, Option, Ref } from "effect";
+import { Effect, Option, pipe } from "effect";
 import { Game } from "shared/src/types/game";
 import { Player, Team } from "shared/src/types/players";
-import { WaitingPlayerState } from "./state";
+import { state } from "./state";
 
 function initGame(players: [Player, Player, Player, Player]): Game {
   const teamA: Team = {
@@ -21,46 +21,33 @@ function initGame(players: [Player, Player, Player, Player]): Game {
 }
 
 function getPlayers(
-  player: Player
-): Effect.Effect<
-  Option.Option<[Player, Player, Player, Player]>,
-  never,
-  WaitingPlayerState
-> {
-  return WaitingPlayerState.pipe(
-    Effect.andThen((waitingPlayersState) => Ref.get(waitingPlayersState)),
-    Effect.map((waitingPlayersChunk) => {
-      if (Chunk.size(waitingPlayersChunk) >= 3) {
-        return Option.some([
-          player,
-          ...(Chunk.toArray(Chunk.drop(waitingPlayersChunk, 3)) as [
-            Player,
-            Player,
-            Player,
-          ]),
-        ]);
-      } else {
-        Chunk.append(waitingPlayersChunk, player);
-        return Option.none();
-      }
-    })
-  );
+  player: Player,
+): Effect.Effect<Option.Option<[Player, Player, Player, Player]>> {
+  if (state.waitingPlayers.length >= 3) {
+    return Effect.succeed(
+      Option.some([player, ...state.waitingPlayers.splice(0, 3)] as [
+        Player,
+        Player,
+        Player,
+        Player,
+      ]),
+    );
+  } else {
+    state.waitingPlayers.push(player);
+    return Effect.succeed(Option.none());
+  }
 }
 
 export function searchGameForPlayer(
-  player: Player
-): Effect.Effect<Option.Option<Game>, never, WaitingPlayerState> {
-  return WaitingPlayerState.pipe(
-    Effect.flatMap(() => getPlayers(player)),
-    Effect.map((maybePlayers) => {
-      return Option.match(maybePlayers, {
-        onSome: (players) => {
-          return Option.some(initGame(players));
-        },
-        onNone: () => {
-          return Option.none();
-        },
-      });
-    })
+  player: Player,
+): Effect.Effect<Option.Option<Game>> {
+  return pipe(
+    getPlayers(player),
+    Effect.map((maybePlayers) =>
+      Option.match(maybePlayers, {
+        onSome: (players) => Option.some(initGame(players)),
+        onNone: () => Option.none(),
+      }),
+    ),
   );
 }
