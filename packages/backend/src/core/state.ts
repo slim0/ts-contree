@@ -1,36 +1,42 @@
 import { Mutex } from "async-mutex";
-import { Player } from "shared/src/types/players";
+import { Player, PlayerUUID } from "shared/src/types/players";
 
 type State = {
-  waitingPlayers: Player[];
+  waitingPlayers: Map<PlayerUUID, Player>;
 };
 
 export const state: State = {
-  waitingPlayers: [],
+  waitingPlayers: new Map(),
 };
-const waitingPlayersStateMutex = new Mutex();
 
-export async function retrieveWaitingPlayers(
-  count: number,
-): Promise<Player[] | undefined> {
-  const release = await waitingPlayersStateMutex.acquire();
-  try {
-    if (state.waitingPlayers.length >= count) {
-      return state.waitingPlayers.splice(0, count);
-    } else {
-      return undefined;
-    }
-  } finally {
-    release();
-  }
-}
+const waitingPlayersStateMutex = new Mutex();
 
 export async function pushNewWaitingPlayer(
   newWaitingPlayer: Player,
 ): Promise<void> {
   const release = await waitingPlayersStateMutex.acquire();
   try {
-    state.waitingPlayers.push(newWaitingPlayer);
+    state.waitingPlayers.set(newWaitingPlayer.uuid, newWaitingPlayer);
+  } finally {
+    release();
+  }
+}
+
+export async function retrieveWaitingPlayers(
+  count: number,
+): Promise<Player[] | undefined> {
+  const release = await waitingPlayersStateMutex.acquire();
+  try {
+    if (state.waitingPlayers.size >= 3) {
+      const players = Array.from(state.waitingPlayers.values()).splice(
+        0,
+        count,
+      );
+      players.map((player) => state.waitingPlayers.delete(player.uuid));
+      return players;
+    } else {
+      return undefined;
+    }
   } finally {
     release();
   }
