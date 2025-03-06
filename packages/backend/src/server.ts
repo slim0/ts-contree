@@ -74,7 +74,7 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   console.log(`Client with userId=${connectedUser.uuid} connected`);
 
   webSocketClientConnection.on("message", (message) => {
-    Effect.runSync(
+    Effect.runPromiseExit(
       pipe(
         processReceivedWebSocketMessage(message, connectedUser),
         Effect.mapBoth({

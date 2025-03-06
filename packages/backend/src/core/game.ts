@@ -1,7 +1,7 @@
 import { Effect, Option, pipe } from "effect";
 import { Game } from "shared/src/types/game";
 import { Player, Team } from "shared/src/types/players";
-import { state } from "./state";
+import { pushNewWaitingPlayer, retrieveWaitingPlayers } from "./state";
 
 function initGame(players: [Player, Player, Player, Player]): Game {
   const teamA: Team = {
@@ -23,19 +23,24 @@ function initGame(players: [Player, Player, Player, Player]): Game {
 function getPlayers(
   player: Player,
 ): Effect.Effect<Option.Option<[Player, Player, Player, Player]>> {
-  if (state.waitingPlayers.length >= 3) {
-    return Effect.succeed(
-      Option.some([player, ...state.waitingPlayers.splice(0, 3)] as [
-        Player,
-        Player,
-        Player,
-        Player,
-      ]),
-    );
-  } else {
-    state.waitingPlayers.push(player);
-    return Effect.succeed(Option.none());
-  }
+  return pipe(
+    Effect.promise(() => retrieveWaitingPlayers(3)),
+    Effect.andThen((maybePlayers) =>
+      maybePlayers !== undefined
+        ? Effect.succeed(
+            Option.some([player, ...maybePlayers!] as [
+              Player,
+              Player,
+              Player,
+              Player,
+            ]),
+          )
+        : pipe(
+            Effect.promise(() => pushNewWaitingPlayer(player)),
+            Effect.andThen(() => Effect.succeed(Option.none())),
+          ),
+    ),
+  );
 }
 
 export function searchGameForPlayer(
