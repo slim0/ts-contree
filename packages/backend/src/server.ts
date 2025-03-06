@@ -21,7 +21,7 @@ function treatUserMessage(
   userMessage: UserMessage,
 ): Effect.Effect<ServerMessage> {
   return Match.value(userMessage.event).pipe(
-    Match.when("connect", () => {
+    Match.when("playGame", () => {
       return pipe(
         searchGameForPlayer(connectedUser),
         Effect.map((maybeGame) =>
