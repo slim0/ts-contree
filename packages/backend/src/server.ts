@@ -12,6 +12,7 @@ import { Player, PlayerUUID } from "shared/src/types/players";
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import { searchGameForPlayer } from "./core/game";
+import { deleteWaitingPlayer } from "./core/state";
 
 const app = express();
 const webSocketServer = new WebSocketServer({ noServer: true });
@@ -65,8 +66,8 @@ function processReceivedWebSocketMessage(
   );
 }
 
-function handleClientDisconnection(userId: string) {
-  console.log(`Client with userId=${userId} disconnected`);
+function handleClientDisconnection(player: Player) {
+  Effect.runPromiseExit(Effect.promise(() => deleteWaitingPlayer(player)))
 }
 
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
@@ -91,7 +92,7 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   });
 
   webSocketClientConnection.on("close", () => {
-    handleClientDisconnection(connectedUser.uuid);
+    handleClientDisconnection(connectedUser);
   });
 }
 
