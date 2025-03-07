@@ -1,3 +1,3 @@
-import { WebSocket } from "ws";
+import { WebSocket } from 'ws'
 
-type Client = WebSocket;
+type Client = WebSocket

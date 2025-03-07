@@ -1,7 +1,7 @@
-export type UserUUID = string & { __brand: "UserUUID" };
+export type UserUUID = string & { __brand: 'UserUUID' }
 
 export type User = {
-  uuid: UserUUID;
-};
+  uuid: UserUUID
+}
 
-export type Users = User[];
+export type Users = User[]

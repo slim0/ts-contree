@@ -1,3 +1,3 @@
 export class UserNotFoundError {
-  readonly _tag = "UserNotFoundError";
+  readonly _tag = 'UserNotFoundError'
 }

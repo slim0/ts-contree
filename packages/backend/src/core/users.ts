@@ -1,15 +1,15 @@
-import { Effect } from "effect";
-import { UserNotFoundError } from "../../types/errors";
-import { User, Users, UserUUID } from "../../types/user";
+import { Effect } from 'effect'
+import { UserNotFoundError } from '../../types/errors'
+import { User, Users, UserUUID } from '../../types/user'
 
 export function retrieveUserbyUUID(
   users: Users,
-  userUuid: UserUUID
+  userUuid: UserUUID,
 ): Effect.Effect<User, UserNotFoundError> {
-  const maybeUser = users.find(({ uuid }) => uuid === userUuid);
+  const maybeUser = users.find(({ uuid }) => uuid === userUuid)
   if (!maybeUser) {
-    return Effect.fail(new UserNotFoundError());
+    return Effect.fail(new UserNotFoundError())
   } else {
-    return Effect.succeed(maybeUser);
+    return Effect.succeed(maybeUser)
   }
 }
