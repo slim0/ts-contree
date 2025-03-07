@@ -11,17 +11,35 @@ import {
 import { Player, PlayerUUID } from "shared/src/types/players";
 import { v4 as uuidv4 } from "uuid";
 import { RawData, WebSocket, WebSocketServer } from "ws";
+import { Server as HTTPServer } from "http";
 import { searchGameForPlayer } from "./core/game";
 import { deleteWaitingPlayer } from "./core/state";
 
+export function createWebSocketServer(server: HTTPServer) {
+  const webSocketServer = new WebSocketServer({server});
+  console.log(`WebSocket server running on port ${WS_PORT}`);
+
+  webSocketServer.on("connection", (connection) => {
+    handleWebSocketConnection(connection);
+  });
+
+  return webSocketServer
+}
+
 const app = express();
-const webSocketServer = new WebSocketServer({ noServer: true });
+const WS_PORT = 3000;
+const httpServer = app.listen(WS_PORT);
+
+createWebSocketServer(httpServer)
 
 function treatUserMessage(
   connectedUser: Player,
   userMessage: UserMessage,
 ): Effect.Effect<ServerMessage> {
   return Match.value(userMessage.event).pipe(
+    Match.when("ping", () => {
+      return Effect.succeed({ message: "pong", data: null });
+    }),
     Match.when("playGame", () => {
       return pipe(
         searchGameForPlayer(connectedUser),
@@ -95,17 +113,3 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
     handleClientDisconnection(connectedUser);
   });
 }
-
-webSocketServer.on("connection", (connection) => {
-  handleWebSocketConnection(connection);
-});
-
-const WS_PORT = 3000;
-const server = app.listen(WS_PORT);
-console.log(`WebSocket server running on port ${WS_PORT}`);
-
-server.on("upgrade", (request, socket, head) => {
-  webSocketServer.handleUpgrade(request, socket, head, (socket) => {
-    webSocketServer.emit("connection", socket, request);
-  });
-});
