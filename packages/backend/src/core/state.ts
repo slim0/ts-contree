@@ -22,6 +22,17 @@ export async function pushNewWaitingPlayer(
   }
 }
 
+export async function deleteWaitingPlayer(
+  waitingPlayer: Player,
+): Promise<void> {
+  const release = await waitingPlayersStateMutex.acquire();
+  try {
+    state.waitingPlayers.delete(waitingPlayer.uuid);
+  } finally {
+    release();
+  }
+}
+
 export async function retrieveWaitingPlayers(
   count: number,
 ): Promise<Player[] | undefined> {

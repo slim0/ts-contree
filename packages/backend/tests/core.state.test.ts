@@ -1,4 +1,5 @@
 import {
+  deleteWaitingPlayer,
   pushNewWaitingPlayer,
   retrieveWaitingPlayers,
   state,
@@ -27,3 +28,17 @@ test("update waiting player state", async () => {
   expect(await retrieveWaitingPlayers(3)).toBe(undefined);
   expect(state.waitingPlayers.size).toBe(0);
 });
+
+test("delete waiting player state", async () => {
+  const player1: Player = { uuid: "1" as PlayerUUID };
+  const player2: Player = { uuid: "2" as PlayerUUID };
+
+  await pushNewWaitingPlayer(player1);
+  await pushNewWaitingPlayer(player2);
+
+  expect(state.waitingPlayers.size).toBe(2);
+
+  await deleteWaitingPlayer(player1);
+
+  expect(state.waitingPlayers.size).toBe(1);
+})
