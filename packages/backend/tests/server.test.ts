@@ -1,5 +1,9 @@
 import { Server } from 'node:http'
 import {
+  ServerMessageError,
+  UnparsableMessageError,
+} from 'shared/src/errors/webSocketMessage.js'
+import {
   ServerMessage,
   UserMessage,
 } from 'shared/src/schemas/webSocketMessage.js'
@@ -76,5 +80,24 @@ describe('WebSocket Server', () => {
     player1.close()
     player2.close()
     player3.close()
+  })
+
+  test('Player sending a wrong message to the server receives an unparsable error', async () => {
+    const player = new TestWebSocket(url)
+    await player.waitUntil('open')
+
+    const wrongMessage = {
+      event: 'wrongMessageEvent',
+    }
+    const expectedMessageFromServer: ServerMessageError<UnparsableMessageError> =
+      {
+        _tag: 'UnparsableMessageError',
+        message: `Unable to parse message from player`,
+      }
+
+    player.send(JSON.stringify(wrongMessage))
+    await player.waitForMessage(JSON.stringify(expectedMessageFromServer))
+
+    player.close()
   })
 })

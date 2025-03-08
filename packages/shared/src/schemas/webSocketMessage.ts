@@ -2,7 +2,12 @@ import { Schema as S } from "@effect/schema";
 import { gameSchema } from "../types/game";
 
 // Client
-export const eventSchema = S.Literal("ping", "playGame", "playCard", "playLastCard");
+export const eventSchema = S.Literal(
+  "ping",
+  "playGame",
+  "playCard",
+  "playLastCard",
+);
 
 export const messageSchema = S.Struct({
   event: eventSchema,

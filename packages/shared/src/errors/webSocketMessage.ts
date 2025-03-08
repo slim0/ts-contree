@@ -1,4 +1,6 @@
 export type ServerMessageError<T> = {
+  _tag: T;
   message: string;
-  error: T;
 };
+
+export type UnparsableMessageError = "UnparsableMessageError";

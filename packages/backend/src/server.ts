@@ -1,8 +1,11 @@
 import { Schema as S } from '@effect/schema'
-import { ParseError } from '@effect/schema/ParseResult'
 import { Effect, Match, Option, pipe } from 'effect'
 import express from 'express'
-import { ServerMessageError } from 'shared/src/errors/webSocketMessage'
+import { Server as HTTPServer } from 'http'
+import {
+  ServerMessageError,
+  UnparsableMessageError,
+} from 'shared/src/errors/webSocketMessage'
 import {
   messageSchema,
   ServerMessage,
@@ -11,7 +14,6 @@ import {
 import { Player, PlayerUUID } from 'shared/src/types/players'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
-import { Server as HTTPServer } from 'http'
 import { searchGameForPlayer } from './core/game'
 import { deleteWaitingPlayer } from './core/state'
 
@@ -74,16 +76,18 @@ function treatUserMessage(
 function processReceivedWebSocketMessage(
   message: RawData,
   connectedUser: Player,
-): Effect.Effect<ServerMessage, ServerMessageError<ParseError>> {
+): Effect.Effect<ServerMessage, ServerMessageError<UnparsableMessageError>> {
   return pipe(
     S.decodeUnknownEither(messageSchema)(JSON.parse(message.toString())),
     Effect.andThen((parsedMessage) =>
       treatUserMessage(connectedUser, parsedMessage),
     ),
-    Effect.mapError((schemaParseError) => ({
-      message: schemaParseError.message,
-      error: schemaParseError,
-    })),
+    Effect.mapError(() => {
+      return {
+        _tag: 'UnparsableMessageError',
+        message: `Unable to parse message from player`,
+      }
+    }),
   )
 }
 
@@ -104,7 +108,7 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
             webSocketClientConnection.send(JSON.stringify(response))
           },
           onFailure: (errorResponse) => {
-            console.error(errorResponse)
+            console.error(errorResponse.message)
             webSocketClientConnection.send(JSON.stringify(errorResponse))
           },
         }),
