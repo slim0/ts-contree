@@ -33,8 +33,7 @@ describe('WebSocket Server', () => {
       event: 'ping',
     }
     const expectedMessageFromServer: ServerMessage = {
-      message: 'pong',
-      data: null,
+      event: 'pong',
     }
 
     player.send(JSON.stringify(pingMessage))
@@ -57,23 +56,28 @@ describe('WebSocket Server', () => {
     const playGameMessage: UserMessage = {
       event: 'playGame',
     }
-    const expectedMessageFromServer: ServerMessage = {
-      message: 'user connected',
-      data: null,
+    const expectedWaitingForGameMessageFromServer: ServerMessage = {
+      event: 'waitingForGame',
     }
 
     player1.send(JSON.stringify(playGameMessage))
-    await player1.waitForMessage(JSON.stringify(expectedMessageFromServer))
+    await player1.waitForMessage(
+      JSON.stringify(expectedWaitingForGameMessageFromServer),
+    )
 
     expect(state.waitingPlayers.size).toBe(1)
 
     player2.send(JSON.stringify(playGameMessage))
-    await player2.waitForMessage(JSON.stringify(expectedMessageFromServer))
+    await player2.waitForMessage(
+      JSON.stringify(expectedWaitingForGameMessageFromServer),
+    )
 
     expect(state.waitingPlayers.size).toBe(2)
 
     player3.send(JSON.stringify(playGameMessage))
-    await player3.waitForMessage(JSON.stringify(expectedMessageFromServer))
+    await player3.waitForMessage(
+      JSON.stringify(expectedWaitingForGameMessageFromServer),
+    )
 
     expect(state.waitingPlayers.size).toBe(3)
 

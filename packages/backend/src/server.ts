@@ -40,7 +40,7 @@ function treatUserMessage(
 ): Effect.Effect<ServerMessage> {
   return Match.value(userMessage.event).pipe(
     Match.when('ping', () => {
-      return Effect.succeed({ message: 'pong', data: null })
+      return Effect.succeed({ event: 'pong' as const })
     }),
     Match.when('playGame', () => {
       return pipe(
@@ -49,24 +49,23 @@ function treatUserMessage(
           Option.match(maybeGame, {
             onSome: (game) => {
               return {
-                message: 'user connected',
+                event: 'gameStarted' as const,
                 data: game,
               }
             },
             onNone: () => {
-              return { message: 'user connected', data: null }
+              return { event: 'waitingForGame' as const }
             },
           }),
         ),
       )
     }),
     Match.when('playCard', () => {
-      return Effect.succeed({ message: 'user played card', data: null })
+      return Effect.succeed({ event: 'cardPlayed' as const })
     }),
     Match.when('playLastCard', () => {
       return Effect.succeed({
-        message: 'user played last card',
-        data: null,
+        event: 'lastCardPlayed' as const,
       })
     }),
     Match.exhaustive,
@@ -98,6 +97,11 @@ function handleClientDisconnection(player: Player) {
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   const connectedUser: Player = { uuid: uuidv4() as PlayerUUID }
   console.log(`Client with userId=${connectedUser.uuid} connected`)
+  const userConnectedServerMessage: ServerMessage = {
+    event: 'playerConnected',
+    data: connectedUser,
+  }
+  webSocketClientConnection.send(JSON.stringify(userConnectedServerMessage))
 
   webSocketClientConnection.on('message', (message) => {
     Effect.runPromiseExit(

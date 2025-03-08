@@ -1,5 +1,6 @@
 import { Schema as S } from "@effect/schema";
 import { gameSchema } from "../types/game";
+import { playerSchema } from "../types/players";
 
 // Client
 export const eventSchema = S.Literal(
@@ -16,10 +17,18 @@ export const messageSchema = S.Struct({
 export type UserMessage = typeof messageSchema.Type;
 
 // Server
+export const serverEventSchema = S.Literal(
+  "pong",
+  "playerConnected",
+  "waitingForGame",
+  "gameStarted",
+  "cardPlayed",
+  "lastCardPlayed",
+);
 
 export const serverMessageSchema = S.Struct({
-  message: S.String,
-  data: S.NullOr(gameSchema),
+  event: serverEventSchema,
+  data: S.optional(S.Union(gameSchema, playerSchema)),
 });
 
 export type ServerMessage = typeof serverMessageSchema.Type;
