@@ -1,7 +1,11 @@
-import { beforeAll, afterAll, describe, test } from 'vitest'
-import { startServer, TestWebSocket } from './webSocketTestUtils.js'
 import { Server } from 'node:http'
-import { expect } from 'vitest'
+import {
+  ServerMessage,
+  UserMessage,
+} from 'shared/src/schemas/webSocketMessage.js'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { state } from '../src/core/state.js'
+import { startServer, TestWebSocket } from './webSocketTestUtils.js'
 
 const port = 3001
 const url = `ws://localhost:${port}`
@@ -18,23 +22,59 @@ describe('WebSocket Server', () => {
   })
 
   test('ping pong end-to-end test', async () => {
-    const client = new TestWebSocket(url)
-    await client.waitUntil('open')
-    const jsonMessage = JSON.stringify({ event: 'ping' })
+    const player = new TestWebSocket(url)
+    await player.waitUntil('open')
 
-    const responseMessage = await new Promise<string>((resolve) => {
-      client.addEventListener('message', ({ data }) => resolve(data), {
-        once: true,
-      })
-
-      client.send(jsonMessage)
-    })
-
-    expect(JSON.parse(responseMessage)).toStrictEqual({
+    const pingMessage: UserMessage = {
+      event: 'ping',
+    }
+    const expectedMessageFromServer: ServerMessage = {
       message: 'pong',
       data: null,
-    })
+    }
 
-    client.close()
+    player.send(JSON.stringify(pingMessage))
+    await player.waitForMessage(JSON.stringify(expectedMessageFromServer))
+
+    player.close()
+  })
+
+  test('New players want to play a game', async () => {
+    const player1 = new TestWebSocket(url)
+    const player2 = new TestWebSocket(url)
+    const player3 = new TestWebSocket(url)
+
+    await player1.waitUntil('open')
+    await player2.waitUntil('open')
+    await player3.waitUntil('open')
+
+    expect(state.waitingPlayers.size).toBe(0)
+
+    const playGameMessage: UserMessage = {
+      event: 'playGame',
+    }
+    const expectedMessageFromServer: ServerMessage = {
+      message: 'user connected',
+      data: null,
+    }
+
+    player1.send(JSON.stringify(playGameMessage))
+    await player1.waitForMessage(JSON.stringify(expectedMessageFromServer))
+
+    expect(state.waitingPlayers.size).toBe(1)
+
+    player2.send(JSON.stringify(playGameMessage))
+    await player2.waitForMessage(JSON.stringify(expectedMessageFromServer))
+
+    expect(state.waitingPlayers.size).toBe(2)
+
+    player3.send(JSON.stringify(playGameMessage))
+    await player3.waitForMessage(JSON.stringify(expectedMessageFromServer))
+
+    expect(state.waitingPlayers.size).toBe(3)
+
+    player1.close()
+    player2.close()
+    player3.close()
   })
 })
