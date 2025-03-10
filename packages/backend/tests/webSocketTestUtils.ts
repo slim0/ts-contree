@@ -1,6 +1,6 @@
+import { Schema } from '@effect/schema'
 import { createWebSocketServer } from 'backend/src/server'
 import http, { Server } from 'node:http'
-
 export function startServer(port: number): Promise<Server> {
   const server = http.createServer()
   createWebSocketServer(server)
@@ -62,22 +62,49 @@ export class TestWebSocket extends WebSocket {
     })
   }
 
-  waitForMessage(
-    message: string,
+  #getLastMessageIndexThatMatchesSchema(schema: Schema.Schema<any>): number {
+    for (let i = this.#messages.length - 1; i >= 0; i--) {
+      if (Schema.is(schema)(JSON.parse(this.#messages[i]))) return i
+    }
+
+    return -1
+  }
+
+  #messageMatchesSchemaAlreadyArrived<A, I>(
+    messageSchema: Schema.Schema<A, I, never>,
+  ): string | undefined {
+    return this.#messages.find((message: string) =>
+      Schema.is(messageSchema)(JSON.parse(message)),
+    )
+  }
+
+  waitForMessageSchema<A, I>(
+    messageSchema: Schema.Schema<A, I, never>,
     debug?: boolean,
     includeExistingMessages: boolean = true,
     timeout: number = 1000,
-  ): void | Promise<void> {
-    if (includeExistingMessages && this.#messages.includes(message)) return
-    const originalMessageIndex = this.#messages.lastIndexOf(message)
+  ): A | Promise<A> {
+    const alreadyMathingMessage =
+      this.#messageMatchesSchemaAlreadyArrived(messageSchema)
+    if (includeExistingMessages && alreadyMathingMessage !== undefined) {
+      return Schema.decodeUnknownSync(messageSchema)(alreadyMathingMessage)
+    }
+
+    const originalMessageIndex =
+      this.#getLastMessageIndexThatMatchesSchema(messageSchema)
 
     return new Promise((resolve, reject) => {
       let timerId: NodeJS.Timeout | undefined
-      const checkForMessage = (event: MessageEvent): void => {
-        debug && console.log('Received message:', event.data.toString('utf8'))
-        if (event.data.toString('utf8') !== message) return
+      function checkForMessage(event: MessageEvent): void {
+        const dataString = event.data.toString('utf8')
+        debug && console.log('Received message:', dataString)
+        const message = JSON.parse(dataString)
+        const isMessageValidUpponSchema = Schema.is(messageSchema)(message)
+        if (isMessageValidUpponSchema === false) {
+          return
+        }
 
-        resolve()
+        resolve(Schema.decodeUnknownSync(messageSchema)(message))
         clearTimeout(timerId)
         this.removeEventListener('message', checkForMessage)
       }
@@ -86,15 +113,20 @@ export class TestWebSocket extends WebSocket {
 
       timerId = setTimeout(() => {
         this.removeEventListener('message', checkForMessage)
-
+        const alreadyMathingMessage =
+          this.#messageMatchesSchemaAlreadyArrived(messageSchema)
         const success = includeExistingMessages
-          ? this.#messages.includes(message)
-          : this.#messages.lastIndexOf(message) > originalMessageIndex
+          ? alreadyMathingMessage !== undefined
+          : this.#getLastMessageIndexThatMatchesSchema(messageSchema) >
+            originalMessageIndex
 
-        if (success) return resolve()
+        if (success)
+          return resolve(
+            Schema.decodeUnknownSync(messageSchema)(alreadyMathingMessage),
+          )
         reject(
           new Error(
-            `WebSocket did not receive the message "${message}" in time.`,
+            `WebSocket did not receive a message matching schema "${messageSchema}" in time.`,
           ),
         )
       }, timeout)

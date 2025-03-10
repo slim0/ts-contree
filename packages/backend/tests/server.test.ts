@@ -1,12 +1,6 @@
+import { Schema as S } from '@effect/schema'
 import { Server } from 'node:http'
-import {
-  ServerMessageError,
-  UnparsableMessageError,
-} from 'shared/src/errors/webSocketMessage.js'
-import {
-  ServerMessage,
-  UserMessage,
-} from 'shared/src/schemas/webSocketMessage.js'
+import { UserMessage } from 'shared/src/schemas/webSocketMessage.js'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { state } from '../src/core/state.js'
 import { startServer, TestWebSocket } from './webSocketTestUtils.js'
@@ -32,12 +26,22 @@ describe('WebSocket Server', () => {
     const pingMessage: UserMessage = {
       event: 'ping',
     }
-    const expectedMessageFromServer: ServerMessage = {
-      event: 'pong',
-    }
+
+    const expectedPlayerConnectedMessageSchema = S.Struct({
+      event: S.Literal('playerConnected'),
+      data: S.Struct({
+        uuid: S.String,
+      }),
+    })
+
+    const expectedPongMessageSchema = S.Struct({
+      event: S.Literal('pong'),
+    })
+
+    await player.waitForMessageSchema(expectedPlayerConnectedMessageSchema)
 
     player.send(JSON.stringify(pingMessage))
-    await player.waitForMessage(JSON.stringify(expectedMessageFromServer))
+    await player.waitForMessageSchema(expectedPongMessageSchema)
 
     player.close()
   })
@@ -56,28 +60,23 @@ describe('WebSocket Server', () => {
     const playGameMessage: UserMessage = {
       event: 'playGame',
     }
-    const expectedWaitingForGameMessageFromServer: ServerMessage = {
-      event: 'waitingForGame',
-    }
+
+    const expectedWaitingForGameMessageSchema = S.Struct({
+      event: S.Literal('waitingForGame'),
+    })
 
     player1.send(JSON.stringify(playGameMessage))
-    await player1.waitForMessage(
-      JSON.stringify(expectedWaitingForGameMessageFromServer),
-    )
+    await player1.waitForMessageSchema(expectedWaitingForGameMessageSchema)
 
     expect(state.waitingPlayers.size).toBe(1)
 
     player2.send(JSON.stringify(playGameMessage))
-    await player2.waitForMessage(
-      JSON.stringify(expectedWaitingForGameMessageFromServer),
-    )
+    await player2.waitForMessageSchema(expectedWaitingForGameMessageSchema)
 
     expect(state.waitingPlayers.size).toBe(2)
 
     player3.send(JSON.stringify(playGameMessage))
-    await player3.waitForMessage(
-      JSON.stringify(expectedWaitingForGameMessageFromServer),
-    )
+    await player3.waitForMessageSchema(expectedWaitingForGameMessageSchema)
 
     expect(state.waitingPlayers.size).toBe(3)
 
@@ -93,14 +92,14 @@ describe('WebSocket Server', () => {
     const wrongMessage = {
       event: 'wrongMessageEvent',
     }
-    const expectedMessageFromServer: ServerMessageError<UnparsableMessageError> =
-      {
-        _tag: 'UnparsableMessageError',
-        message: `Unable to parse message from player`,
-      }
+
+    const expectedMessageFromServerSchema = S.Struct({
+      _tag: S.Literal('UnparsableMessageError'),
+      message: S.Literal(`Unable to parse message from player`),
+    })
 
     player.send(JSON.stringify(wrongMessage))
-    await player.waitForMessage(JSON.stringify(expectedMessageFromServer))
+    await player.waitForMessageSchema(expectedMessageFromServerSchema)
 
     player.close()
   })
