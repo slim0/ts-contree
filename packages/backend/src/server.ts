@@ -2,13 +2,16 @@ import { Schema as S } from '@effect/schema'
 import { Effect, Match, Option, pipe } from 'effect'
 import express from 'express'
 import { Server as HTTPServer } from 'http'
-import { PlayerEvent, playerEventSchema } from 'shared/src/schemas/playerEvents'
+import { Player, PlayerUUID } from 'shared/src/eventSchemas/datas/players'
+import {
+  PlayerEvent,
+  playerEventSchema,
+} from 'shared/src/eventSchemas/player/playerEvents'
 import {
   PlayerConnectedEvent,
   ServerEvent,
   UnparsableErrorEvent,
-} from 'shared/src/schemas/serverEvents'
-import { Player, PlayerUUID } from 'shared/src/types/players'
+} from 'shared/src/eventSchemas/server/serverEvents'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
 import { searchGameForPlayer } from './core/game'

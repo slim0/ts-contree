@@ -4,7 +4,8 @@ import {
   jackOfHearts,
   nineOfHearts,
   tenOfHearts,
-} from 'shared/src/types/cards'
+} from 'shared/src/eventSchemas/datas/cards'
+
 import { expect, test } from 'vitest'
 
 test('find best card in list without assets', () => {

@@ -1,6 +1,6 @@
 import { Schema } from "@effect/schema";
-import { gameSchema } from "../types/game";
-import { playerSchema } from "../types/players";
+import { gameSchema } from "../datas/game";
+import { playerSchema } from "../datas/players";
 
 // Success
 

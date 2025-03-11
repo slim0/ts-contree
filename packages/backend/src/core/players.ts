@@ -1,6 +1,6 @@
-import { Color, Fold } from 'shared/src/types/cards'
-import { Game } from 'shared/src/types/game'
-import { Team } from 'shared/src/types/players'
+import { Color, Fold } from 'shared/src/eventSchemas/datas/cards'
+import { Game } from 'shared/src/eventSchemas/datas/game'
+import { Team } from 'shared/src/eventSchemas/datas/players'
 import { countPointsCards } from './cards'
 
 function countFoldPoints(fold: Fold, assetColor: Color): number {

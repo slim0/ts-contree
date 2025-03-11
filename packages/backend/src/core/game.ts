@@ -1,6 +1,6 @@
 import { Effect, Option, pipe } from 'effect'
-import { Game } from 'shared/src/types/game'
-import { Player, Team } from 'shared/src/types/players'
+import { Game } from 'shared/src/eventSchemas/datas/game'
+import { Player, Team } from 'shared/src/eventSchemas/datas/players'
 import { pushNewWaitingPlayer, retrieveWaitingPlayers } from './state'
 
 function initGame(players: [Player, Player, Player, Player]): Game {

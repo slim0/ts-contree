@@ -1,12 +1,15 @@
 import { Server } from 'node:http'
-import { PingEvent, PlayGameEvent } from 'shared/src/schemas/playerEvents'
+import {
+  PingEvent,
+  PlayGameEvent,
+} from 'shared/src/eventSchemas/player/playerEvents'
 import {
   gameStartedEventSchema,
   playerConnectedEventSchema,
   pongEventSchema,
   unparsableErrorEventSchema,
   waitingForGameEventSchema,
-} from 'shared/src/schemas/serverEvents'
+} from 'shared/src/eventSchemas/server/serverEvents'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { state } from '../src/core/state'
 import { startServer, TestWebSocket } from './webSocketTestUtils'

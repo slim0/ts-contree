@@ -1,5 +1,5 @@
 import { Mutex } from 'async-mutex'
-import { Player, PlayerUUID } from 'shared/src/types/players'
+import { Player, PlayerUUID } from 'shared/src/eventSchemas/datas/players'
 
 type State = {
   waitingPlayers: Map<PlayerUUID, Player>
