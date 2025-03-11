@@ -75,6 +75,9 @@ describe('WebSocket Server', () => {
 
     player4.send(JSON.stringify(playGameEvent))
 
+    await player1.waitForEventSchema(gameStartedEventSchema)
+    await player2.waitForEventSchema(gameStartedEventSchema)
+    await player3.waitForEventSchema(gameStartedEventSchema)
     await player4.waitForEventSchema(gameStartedEventSchema)
     expect(state.waitingPlayers.size).toBe(0)
 
