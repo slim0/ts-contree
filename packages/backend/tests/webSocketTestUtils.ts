@@ -12,9 +12,14 @@ export function startServer(port: number): Promise<Server> {
 
 export class TestWebSocket extends WebSocket {
   #messages: string[] = []
+  #playerName: string
 
-  constructor(...args: ConstructorParameters<typeof WebSocket>) {
+  constructor(
+    playerName: string,
+    ...args: ConstructorParameters<typeof WebSocket>
+  ) {
     super(...args)
+    this.#playerName = playerName
 
     const addNewMessage = (event: MessageEvent) =>
       this.#messages.push(event.data.toString('utf8'))
@@ -126,7 +131,7 @@ export class TestWebSocket extends WebSocket {
           )
         reject(
           new Error(
-            `WebSocket did not receive a message matching schema "${messageSchema}" in time.`,
+            `WebSocket did not receive message in time from "${this.#playerName}" matching schema "${messageSchema}"`,
           ),
         )
       }, timeout)

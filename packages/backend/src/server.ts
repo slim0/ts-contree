@@ -99,9 +99,17 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
       pipe(
         processReceivedWebSocketMessage(message, connectedUser),
         Effect.mapBoth({
-          onSuccess: (response) => {
-            webSocketClientConnection.send(JSON.stringify(response))
-          },
+          onSuccess: (response) =>
+            Match.value(response.event).pipe(
+              Match.whenOr('pong', 'waitingForGame', () =>
+                webSocketClientConnection.send(JSON.stringify(response)),
+              ),
+              Match.when('gameStarted', () =>
+                webSocketClientConnection.send(JSON.stringify(response)),
+              ),
+              Match.exhaustive,
+            ),
+          // ,
           onFailure: (errorResponse) => {
             console.error(errorResponse.message)
             webSocketClientConnection.send(JSON.stringify(errorResponse))

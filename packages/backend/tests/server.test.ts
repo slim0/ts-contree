@@ -1,6 +1,7 @@
 import { Server } from 'node:http'
 import { PingEvent, PlayGameEvent } from 'shared/src/schemas/playerEvents'
 import {
+  gameStartedEventSchema,
   playerConnectedEventSchema,
   pongEventSchema,
   unparsableErrorEventSchema,
@@ -25,7 +26,7 @@ describe('WebSocket Server', () => {
   })
 
   test('ping pong end-to-end test', async () => {
-    const player = new TestWebSocket(url)
+    const player = new TestWebSocket('player', url)
     await player.waitUntil('open')
 
     const pingEvent: PingEvent = {
@@ -40,14 +41,16 @@ describe('WebSocket Server', () => {
     player.close()
   })
 
-  test('New players want to play a game', async () => {
-    const player1 = new TestWebSocket(url)
-    const player2 = new TestWebSocket(url)
-    const player3 = new TestWebSocket(url)
+  test('New players wants to play a game', async () => {
+    const player1 = new TestWebSocket('player1', url)
+    const player2 = new TestWebSocket('player2', url)
+    const player3 = new TestWebSocket('player3', url)
+    const player4 = new TestWebSocket('player4', url)
 
     await player1.waitUntil('open')
     await player2.waitUntil('open')
     await player3.waitUntil('open')
+    await player4.waitUntil('open')
 
     expect(state.waitingPlayers.size).toBe(0)
 
@@ -70,13 +73,19 @@ describe('WebSocket Server', () => {
 
     expect(state.waitingPlayers.size).toBe(3)
 
+    player4.send(JSON.stringify(playGameEvent))
+
+    await player4.waitForEventSchema(gameStartedEventSchema)
+    expect(state.waitingPlayers.size).toBe(0)
+
     player1.close()
     player2.close()
     player3.close()
+    player4.close()
   })
 
   test('Player sending a wrong message to the server receives an unparsable error', async () => {
-    const player = new TestWebSocket(url)
+    const player = new TestWebSocket('player', url)
     await player.waitUntil('open')
 
     const wrongEvent = {

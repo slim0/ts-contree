@@ -24,7 +24,6 @@ export const gameStartedEventSchema = Schema.Struct({
 
 export const serverEventSchema = Schema.Union(
   pongEventSchema,
-  playerConnectedEventSchema,
   waitingForGameEventSchema,
   gameStartedEventSchema,
 );
