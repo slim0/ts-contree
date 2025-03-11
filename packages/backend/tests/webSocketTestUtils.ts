@@ -78,7 +78,7 @@ export class TestWebSocket extends WebSocket {
     )
   }
 
-  waitForMessageSchema<A, I>(
+  waitForEventSchema<A, I>(
     messageSchema: Schema.Schema<A, I, never>,
     debug?: boolean,
     includeExistingMessages: boolean = true,

@@ -2,15 +2,12 @@ import { Schema as S } from '@effect/schema'
 import { Effect, Match, Option, pipe } from 'effect'
 import express from 'express'
 import { Server as HTTPServer } from 'http'
+import { PlayerEvent, playerEventSchema } from 'shared/src/schemas/playerEvents'
 import {
-  ServerMessageError,
-  UnparsableMessageError,
-} from 'shared/src/errors/webSocketMessage'
-import {
-  messageSchema,
-  ServerMessage,
-  UserMessage,
-} from 'shared/src/schemas/webSocketMessage'
+  PlayerConnectedEvent,
+  ServerEvent,
+  UnparsableErrorEvent,
+} from 'shared/src/schemas/serverEvents'
 import { Player, PlayerUUID } from 'shared/src/types/players'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
@@ -34,11 +31,11 @@ const httpServer = app.listen(WS_PORT)
 
 createWebSocketServer(httpServer)
 
-function treatUserMessage(
+function treatPlayerEvent(
   connectedUser: Player,
-  userMessage: UserMessage,
-): Effect.Effect<ServerMessage> {
-  return Match.value(userMessage.event).pipe(
+  playerEvent: PlayerEvent,
+): Effect.Effect<ServerEvent> {
+  return Match.value(playerEvent.event).pipe(
     Match.when('ping', () => {
       return Effect.succeed({ event: 'pong' as const })
     }),
@@ -54,19 +51,13 @@ function treatUserMessage(
               }
             },
             onNone: () => {
-              return { event: 'waitingForGame' as const }
+              return {
+                event: 'waitingForGame' as const,
+              }
             },
           }),
         ),
       )
-    }),
-    Match.when('playCard', () => {
-      return Effect.succeed({ event: 'cardPlayed' as const })
-    }),
-    Match.when('playLastCard', () => {
-      return Effect.succeed({
-        event: 'lastCardPlayed' as const,
-      })
     }),
     Match.exhaustive,
   )
@@ -75,15 +66,15 @@ function treatUserMessage(
 function processReceivedWebSocketMessage(
   message: RawData,
   connectedUser: Player,
-): Effect.Effect<ServerMessage, ServerMessageError<UnparsableMessageError>> {
+): Effect.Effect<ServerEvent, UnparsableErrorEvent> {
   return pipe(
-    S.decodeUnknownEither(messageSchema)(JSON.parse(message.toString())),
+    S.decodeUnknownEither(playerEventSchema)(JSON.parse(message.toString())),
     Effect.andThen((parsedMessage) =>
-      treatUserMessage(connectedUser, parsedMessage),
+      treatPlayerEvent(connectedUser, parsedMessage),
     ),
     Effect.mapError(() => {
       return {
-        _tag: 'UnparsableMessageError',
+        event: 'unparsableError' as const,
         message: `Unable to parse message from player`,
       }
     }),
@@ -97,11 +88,11 @@ function handleClientDisconnection(player: Player) {
 function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   const connectedUser: Player = { uuid: uuidv4() as PlayerUUID }
   console.log(`Client with userId=${connectedUser.uuid} connected`)
-  const userConnectedServerMessage: ServerMessage = {
-    event: 'playerConnected',
+  const playerConnectedEvent: PlayerConnectedEvent = {
+    event: 'playerConnected' as const,
     data: connectedUser,
   }
-  webSocketClientConnection.send(JSON.stringify(userConnectedServerMessage))
+  webSocketClientConnection.send(JSON.stringify(playerConnectedEvent))
 
   webSocketClientConnection.on('message', (message) => {
     Effect.runPromiseExit(
