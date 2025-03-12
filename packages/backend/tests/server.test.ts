@@ -55,28 +55,28 @@ describe('WebSocket Server', () => {
       playerConnectedEventSchema,
     )
     const player1 = player1ConnectedMessage.data
-    expect(state.players.get(player1.uuid)?.state).toBe('connected')
+    expect(state.players.get(player1.uuid)?.status).toBe('connected')
 
     await player2Connection.waitUntil('open')
     const player2ConnectedMessage = await player2Connection.waitForEventSchema(
       playerConnectedEventSchema,
     )
     const player2 = player2ConnectedMessage.data
-    expect(state.players.get(player2.uuid)?.state).toBe('connected')
+    expect(state.players.get(player2.uuid)?.status).toBe('connected')
 
     await player3Connection.waitUntil('open')
     const player3ConnectedMessage = await player3Connection.waitForEventSchema(
       playerConnectedEventSchema,
     )
     const player3 = player3ConnectedMessage.data
-    expect(state.players.get(player3.uuid)?.state).toBe('connected')
+    expect(state.players.get(player3.uuid)?.status).toBe('connected')
 
     await player4Connection.waitUntil('open')
     const player4ConnectedMessage = await player4Connection.waitForEventSchema(
       playerConnectedEventSchema,
     )
     const player4 = player4ConnectedMessage.data
-    expect(state.players.get(player4.uuid)?.state).toBe('connected')
+    expect(state.players.get(player4.uuid)?.status).toBe('connected')
 
     expect(state.players.size).toBe(4)
 
@@ -86,26 +86,26 @@ describe('WebSocket Server', () => {
 
     player1Connection.send(JSON.stringify(playGameEvent))
     await player1Connection.waitForEventSchema(waitingForGameEventSchema)
-    expect(state.players.get(player1.uuid)?.state).toBe('waitingForGame')
+    expect(state.players.get(player1.uuid)?.status).toBe('waitingForGame')
 
     player2Connection.send(JSON.stringify(playGameEvent))
     await player2Connection.waitForEventSchema(waitingForGameEventSchema)
-    expect(state.players.get(player2.uuid)?.state).toBe('waitingForGame')
+    expect(state.players.get(player2.uuid)?.status).toBe('waitingForGame')
 
     player3Connection.send(JSON.stringify(playGameEvent))
     await player3Connection.waitForEventSchema(waitingForGameEventSchema)
-    expect(state.players.get(player3.uuid)?.state).toBe('waitingForGame')
+    expect(state.players.get(player3.uuid)?.status).toBe('waitingForGame')
 
     player4Connection.send(JSON.stringify(playGameEvent))
 
     await player1Connection.waitForEventSchema(gameStartedEventSchema)
-    expect(state.players.get(player1.uuid)?.state).toBe('playing')
+    expect(state.players.get(player1.uuid)?.status).toBe('playing')
     await player2Connection.waitForEventSchema(gameStartedEventSchema)
-    expect(state.players.get(player2.uuid)?.state).toBe('playing')
+    expect(state.players.get(player2.uuid)?.status).toBe('playing')
     await player3Connection.waitForEventSchema(gameStartedEventSchema)
-    expect(state.players.get(player3.uuid)?.state).toBe('playing')
+    expect(state.players.get(player3.uuid)?.status).toBe('playing')
     await player4Connection.waitForEventSchema(gameStartedEventSchema)
-    expect(state.players.get(player4.uuid)?.state).toBe('playing')
+    expect(state.players.get(player4.uuid)?.status).toBe('playing')
 
     player1Connection.close()
     player2Connection.close()

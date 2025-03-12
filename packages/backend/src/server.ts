@@ -9,7 +9,7 @@ import {
 } from 'shared/src/eventSchemas/player/playerEvents'
 import {
   PlayerConnectedEvent,
-  PlayerNotFoundInStateEvent,
+  PlayerNotFoundInStateErrorEvent,
   ServerEvent,
   UnparsableErrorEvent,
 } from 'shared/src/eventSchemas/server/serverEvents'
@@ -93,7 +93,7 @@ function handleClientDisconnection(player: Player) {
 
 function retrievePlayerConnectionsInState(
   playerUUIDs: PlayerUUID[],
-): Effect.Effect<WebSocket[], PlayerNotFoundInStateEvent> {
+): Effect.Effect<WebSocket[], PlayerNotFoundInStateErrorEvent> {
   return pipe(
     Effect.forEach(playerUUIDs, (playerUUID) => {
       const playerFromState = state.players.get(playerUUID)
@@ -101,7 +101,7 @@ function retrievePlayerConnectionsInState(
         return Effect.succeed(playerFromState.socket)
       } else {
         return Effect.fail({
-          _tag: 'PlayerNotFoundInStateEvent' as const,
+          _tag: 'PlayerNotFoundInStateErrorEvent' as const,
           message: `Unable to find player in state with UUID ${playerUUID}`,
         })
       }

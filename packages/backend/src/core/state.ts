@@ -3,15 +3,14 @@ import { Game, GameUUID } from 'shared/src/eventSchemas/datas/game'
 import { Player, PlayerUUID } from 'shared/src/eventSchemas/datas/players'
 import WebSocket from 'ws'
 
+type StatePlayer = {
+  player: Player
+  socket: WebSocket
+  status: 'connected' | 'waitingForGame' | 'playing'
+}
+
 type State = {
-  players: Map<
-    PlayerUUID,
-    {
-      player: Player
-      socket: WebSocket
-      state: 'connected' | 'waitingForGame' | 'playing'
-    }
-  >
+  players: Map<PlayerUUID, StatePlayer>
   games: Map<GameUUID, { game: Game }>
 }
 
@@ -28,7 +27,7 @@ export async function addConnectedPlayer(
 ): Promise<void> {
   const release = await waitingPlayersStateMutex.acquire()
   try {
-    state.players.set(player.uuid, { player, state: 'connected', socket })
+    state.players.set(player.uuid, { player, status: 'connected', socket })
   } finally {
     release()
   }
@@ -43,7 +42,7 @@ export async function setPlayerStateToWaitingForGame(
     state.players.set(player.uuid, {
       player,
       socket: playerFromState!.socket,
-      state: 'waitingForGame',
+      status: 'waitingForGame',
     })
   } finally {
     release()
@@ -57,7 +56,7 @@ export async function setPlayerStateToPlaying(player: Player): Promise<void> {
     state.players.set(player.uuid, {
       player,
       socket: playerFromState!.socket,
-      state: 'playing',
+      status: 'playing',
     })
   } finally {
     release()
@@ -81,7 +80,7 @@ export async function retrieveWaitingPlayers(
   const release = await waitingPlayersStateMutex.acquire()
   try {
     const waitingPlayers = Array.from(state.players.entries()).filter(
-      ([uuid, player]) => player.state === 'waitingForGame',
+      ([_uuid, player]) => player.status === 'waitingForGame',
     )
     if (waitingPlayers.length >= count) {
       const players = waitingPlayers.splice(0, count)
