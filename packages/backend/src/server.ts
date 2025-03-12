@@ -9,14 +9,17 @@ import {
 } from 'shared/src/eventSchemas/player/playerEvents'
 import {
   PlayerConnectedEvent,
-  PlayerNotFoundInStateErrorEvent,
   ServerEvent,
   UnparsableErrorEvent,
 } from 'shared/src/eventSchemas/server/serverEvents'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
-import { searchGameForPlayer } from './core/game'
-import { addConnectedPlayer, deletePlayerFromState, state } from './core/state'
+import { searchGame } from './core/game'
+import {
+  addConnectedPlayer,
+  deletePlayerFromState,
+  retrieveStatePlayers,
+} from './core/state'
 
 export function createWebSocketServer(server: HTTPServer) {
   const webSocketServer = new WebSocketServer({ server })
@@ -47,7 +50,7 @@ function treatPlayerEvent(
     ),
     Match.tag('PlayGameEvent', () =>
       pipe(
-        searchGameForPlayer(connectedUser),
+        searchGame(connectedUser),
         Effect.map((maybeGame) =>
           Option.match(maybeGame, {
             onSome: (game) => {
@@ -91,24 +94,6 @@ function handleClientDisconnection(player: Player) {
   Effect.runPromiseExit(Effect.promise(() => deletePlayerFromState(player)))
 }
 
-function retrievePlayerConnectionsInState(
-  playerUUIDs: PlayerUUID[],
-): Effect.Effect<WebSocket[], PlayerNotFoundInStateErrorEvent> {
-  return pipe(
-    Effect.forEach(playerUUIDs, (playerUUID) => {
-      const playerFromState = state.players.get(playerUUID)
-      if (playerFromState !== undefined) {
-        return Effect.succeed(playerFromState.socket)
-      } else {
-        return Effect.fail({
-          _tag: 'PlayerNotFoundInStateErrorEvent' as const,
-          message: `Unable to find player in state with UUID ${playerUUID}`,
-        })
-      }
-    }),
-  )
-}
-
 async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   const connectedPlayer: Player = { uuid: uuidv4() as PlayerUUID }
   console.log(`Client with userId=${connectedPlayer.uuid} connected`)
@@ -137,11 +122,13 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
                   event.data.playerOrder.map((player) => player.uuid),
                 ),
                 Effect.andThen((playerUUIDs) =>
-                  retrievePlayerConnectionsInState(playerUUIDs),
+                  retrieveStatePlayers(playerUUIDs),
                 ),
-                Effect.andThen((connections) =>
-                  Effect.forEach(connections, (connection) =>
-                    Effect.succeed(connection.send(JSON.stringify(response))),
+                Effect.andThen((statePlayers) =>
+                  Effect.forEach(statePlayers, (statePlayer) =>
+                    Effect.succeed(
+                      statePlayer?.socket.send(JSON.stringify(response)), // TODO: treat case where user is no longer in state
+                    ),
                   ),
                 ),
               ),

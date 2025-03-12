@@ -1,7 +1,7 @@
 import { Effect, Match, Option, pipe } from 'effect'
 import { Game } from 'shared/src/eventSchemas/datas/game'
 import { Player, Team } from 'shared/src/eventSchemas/datas/players'
-import { retrieveWaitingPlayers, setPlayerStateToWaitingForGame } from './state'
+import { retrieveWaitingPlayers, setPlayerStatus } from './state'
 
 function initGame(players: [Player, Player, Player, Player]): Game {
   const teamA: Team = {
@@ -20,22 +20,34 @@ function initGame(players: [Player, Player, Player, Player]): Game {
   }
 }
 
-function getPlayers(
+function searchAvailablePlayers(
   player: Player,
 ): Effect.Effect<Option.Option<[Player, Player, Player, Player]>> {
   return pipe(
-    Effect.promise(() => retrieveWaitingPlayers(4)),
+    Effect.promise(() => retrieveWaitingPlayers(3)),
     Effect.andThen((maybePlayers) =>
       Match.value(maybePlayers).pipe(
         Match.when(undefined, () =>
           pipe(
-            Effect.promise(() => setPlayerStateToWaitingForGame(player)),
+            Effect.promise(() =>
+              setPlayerStatus(player.uuid, 'waitingForGame'),
+            ),
             Effect.andThen(() => Effect.succeed(Option.none())),
           ),
         ),
         Match.orElse((players) =>
-          Effect.succeed(
-            Option.some(players as [Player, Player, Player, Player]),
+          pipe(
+            Effect.promise(() => setPlayerStatus(player.uuid, 'playing')),
+            Effect.andThen(() =>
+              Effect.succeed(
+                Option.some([player, ...players] as [
+                  Player,
+                  Player,
+                  Player,
+                  Player,
+                ]),
+              ),
+            ),
           ),
         ),
       ),
@@ -43,12 +55,9 @@ function getPlayers(
   )
 }
 
-export function searchGameForPlayer(
-  player: Player,
-): Effect.Effect<Option.Option<Game>> {
+export function searchGame(player: Player): Effect.Effect<Option.Option<Game>> {
   return pipe(
-    Effect.promise(() => setPlayerStateToWaitingForGame(player)),
-    Effect.andThen(() => getPlayers(player)),
+    searchAvailablePlayers(player),
     Effect.map((maybePlayers) =>
       Option.match(maybePlayers, {
         onSome: (players) => Option.some(initGame(players)),

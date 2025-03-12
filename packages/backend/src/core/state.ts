@@ -3,10 +3,12 @@ import { Game, GameUUID } from 'shared/src/eventSchemas/datas/game'
 import { Player, PlayerUUID } from 'shared/src/eventSchemas/datas/players'
 import WebSocket from 'ws'
 
+type PlayerStatus = 'connected' | 'waitingForGame' | 'playing'
+
 type StatePlayer = {
   player: Player
   socket: WebSocket
-  status: 'connected' | 'waitingForGame' | 'playing'
+  status: PlayerStatus
 }
 
 type State = {
@@ -33,31 +35,32 @@ export async function addConnectedPlayer(
   }
 }
 
-export async function setPlayerStateToWaitingForGame(
-  player: Player,
-): Promise<void> {
-  const release = await waitingPlayersStateMutex.acquire()
-  const playerFromState = state.players.get(player.uuid)
+async function getStatePlayer(
+  playerUUID: PlayerUUID,
+  alreadyLock: boolean,
+): Promise<StatePlayer | undefined> {
+  const release = alreadyLock ? null : await waitingPlayersStateMutex.acquire()
   try {
-    state.players.set(player.uuid, {
-      player,
-      socket: playerFromState!.socket,
-      status: 'waitingForGame',
-    })
+    const playerFromState = state.players.get(playerUUID)
+    return playerFromState
   } finally {
-    release()
+    release && release()
   }
 }
 
-export async function setPlayerStateToPlaying(player: Player): Promise<void> {
+export async function setPlayerStatus(
+  playerUUID: PlayerUUID,
+  status: PlayerStatus,
+): Promise<Map<PlayerUUID, StatePlayer> | undefined> {
   const release = await waitingPlayersStateMutex.acquire()
-  const playerFromState = state.players.get(player.uuid)
   try {
-    state.players.set(player.uuid, {
-      player,
-      socket: playerFromState!.socket,
-      status: 'playing',
-    })
+    const playerFromState = await getStatePlayer(playerUUID, true)
+    return playerFromState !== undefined
+      ? state.players.set(playerFromState.player.uuid, {
+          ...playerFromState,
+          status: status,
+        })
+      : undefined
   } finally {
     release()
   }
@@ -85,12 +88,28 @@ export async function retrieveWaitingPlayers(
     if (waitingPlayers.length >= count) {
       const players = waitingPlayers.splice(0, count)
       players.map(
-        async ([_uuid, player]) => await setPlayerStateToPlaying(player.player),
+        async ([_uuid, player]) =>
+          await setPlayerStatus(player.player.uuid, 'playing'),
       )
       return players.map(([_uuid, player]) => player.player)
     } else {
       return undefined
     }
+  } finally {
+    release()
+  }
+}
+
+export async function retrieveStatePlayers(
+  playerUUIDs: PlayerUUID[],
+): Promise<(StatePlayer | undefined)[]> {
+  const release = await waitingPlayersStateMutex.acquire()
+  try {
+    return await Promise.all(
+      playerUUIDs.map(
+        async (playerUUID) => await getStatePlayer(playerUUID, true),
+      ),
+    )
   } finally {
     release()
   }

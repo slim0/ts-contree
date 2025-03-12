@@ -41,18 +41,8 @@ export const unparsableErrorEventSchema = Schema.Struct({
   message: Schema.String,
 });
 
-export const playerNotFoundInStateErrorEventSchema = Schema.Struct({
-  _tag: Schema.tag("PlayerNotFoundInStateErrorEvent"),
-  message: Schema.String,
-});
-
 export type UnparsableErrorEvent = typeof unparsableErrorEventSchema.Type;
-export type PlayerNotFoundInStateErrorEvent =
-  typeof playerNotFoundInStateErrorEventSchema.Type;
 
-export const serverErrorEventSchema = Schema.Union(
-  unparsableErrorEventSchema,
-  playerNotFoundInStateErrorEventSchema,
-);
+export const serverErrorEventSchema = Schema.Union(unparsableErrorEventSchema);
 
 export type ServerErrorEvent = typeof serverErrorEventSchema.Type;
