@@ -1,6 +1,6 @@
 import { Schema } from "@effect/schema";
 import { gameSchema } from "../datas/game";
-import { playerUUIDSchema } from "../datas/players";
+import { playerSchema } from "../datas/players";
 
 // Success
 
@@ -10,7 +10,7 @@ export const pongEventSchema = Schema.Struct({
 
 export const playerConnectedEventSchema = Schema.Struct({
   _tag: Schema.tag("PlayerConnectedEvent"),
-  data: playerUUIDSchema,
+  data: playerSchema,
 });
 
 export const waitingForGameEventSchema = Schema.Struct({

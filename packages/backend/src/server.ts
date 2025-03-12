@@ -115,7 +115,7 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   await addConnectedPlayer(connectedPlayer, webSocketClientConnection)
   const playerConnectedEvent: PlayerConnectedEvent = {
     _tag: 'PlayerConnectedEvent',
-    data: connectedPlayer.uuid,
+    data: connectedPlayer,
   }
   await addConnectedPlayer(connectedPlayer, webSocketClientConnection)
   webSocketClientConnection.send(JSON.stringify(playerConnectedEvent))

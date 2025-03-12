@@ -1,6 +1,7 @@
 import { Schema } from '@effect/schema'
 import { createWebSocketServer } from 'backend/src/server'
 import http, { Server } from 'node:http'
+
 export function startServer(port: number): Promise<Server> {
   const server = http.createServer()
   createWebSocketServer(server)
