@@ -15,7 +15,7 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
 import { searchGameForPlayer } from './core/game'
-import { deleteWaitingPlayer } from './core/state'
+import { addConnectedPlayer, deletePlayerFromState } from './core/state'
 
 export function createWebSocketServer(server: HTTPServer) {
   const webSocketServer = new WebSocketServer({ server })
@@ -38,32 +38,34 @@ function treatPlayerEvent(
   connectedUser: Player,
   playerEvent: PlayerEvent,
 ): Effect.Effect<ServerEvent> {
-  return Match.value(playerEvent.event).pipe(
-    Match.when('ping', () => {
-      return Effect.succeed({ event: 'pong' as const })
-    }),
-    Match.when('playGame', () => {
-      return pipe(
+  return Match.type<PlayerEvent>().pipe(
+    Match.tag('PingEvent', () =>
+      Effect.succeed({
+        _tag: 'PongEvent' as const,
+      }),
+    ),
+    Match.tag('PlayGameEvent', () =>
+      pipe(
         searchGameForPlayer(connectedUser),
         Effect.map((maybeGame) =>
           Option.match(maybeGame, {
             onSome: (game) => {
               return {
-                event: 'gameStarted' as const,
+                _tag: 'GameStartedEvent' as const,
                 data: game,
               }
             },
             onNone: () => {
               return {
-                event: 'waitingForGame' as const,
+                _tag: 'WaitingForGameEvent' as const,
               }
             },
           }),
         ),
-      )
-    }),
+      ),
+    ),
     Match.exhaustive,
-  )
+  )(playerEvent)
 }
 
 function processReceivedWebSocketMessage(
@@ -77,7 +79,7 @@ function processReceivedWebSocketMessage(
     ),
     Effect.mapError(() => {
       return {
-        event: 'unparsableError' as const,
+        _tag: 'UnparsableErrorEvent' as const,
         message: `Unable to parse message from player`,
       }
     }),
@@ -85,34 +87,35 @@ function processReceivedWebSocketMessage(
 }
 
 function handleClientDisconnection(player: Player) {
-  Effect.runPromiseExit(Effect.promise(() => deleteWaitingPlayer(player)))
+  Effect.runPromiseExit(Effect.promise(() => deletePlayerFromState(player)))
 }
 
-function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
-  const connectedUser: Player = { uuid: uuidv4() as PlayerUUID }
-  console.log(`Client with userId=${connectedUser.uuid} connected`)
+async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
+  const connectedPlayer: Player = { uuid: uuidv4() as PlayerUUID }
+  console.log(`Client with userId=${connectedPlayer.uuid} connected`)
+  await addConnectedPlayer(connectedPlayer, webSocketClientConnection)
   const playerConnectedEvent: PlayerConnectedEvent = {
-    event: 'playerConnected' as const,
-    data: connectedUser,
+    _tag: 'PlayerConnectedEvent',
+    data: connectedPlayer.uuid,
   }
+  await addConnectedPlayer(connectedPlayer, webSocketClientConnection)
   webSocketClientConnection.send(JSON.stringify(playerConnectedEvent))
 
   webSocketClientConnection.on('message', (message) => {
     Effect.runPromiseExit(
       pipe(
-        processReceivedWebSocketMessage(message, connectedUser),
+        processReceivedWebSocketMessage(message, connectedPlayer),
         Effect.mapBoth({
           onSuccess: (response) =>
-            Match.value(response.event).pipe(
-              Match.whenOr('pong', 'waitingForGame', () =>
+            Match.type<ServerEvent>().pipe(
+              Match.tag('PongEvent', 'WaitingForGameEvent', () =>
                 webSocketClientConnection.send(JSON.stringify(response)),
               ),
-              Match.when('gameStarted', () =>
-                webSocketClientConnection.send(JSON.stringify(response)),
-              ),
+              Match.tag('GameStartedEvent', (event) => {
+                webSocketClientConnection.send(JSON.stringify(response))
+              }),
               Match.exhaustive,
-            ),
-          // ,
+            )(response),
           onFailure: (errorResponse) => {
             console.error(errorResponse.message)
             webSocketClientConnection.send(JSON.stringify(errorResponse))
@@ -123,6 +126,6 @@ function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   })
 
   webSocketClientConnection.on('close', () => {
-    handleClientDisconnection(connectedUser)
+    handleClientDisconnection(connectedPlayer)
   })
 }

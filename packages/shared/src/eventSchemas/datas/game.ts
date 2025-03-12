@@ -1,9 +1,12 @@
-import { Schema as S } from "@effect/schema";
+import { Schema } from "@effect/schema";
 import { playerSchema, teamSchema } from "./players";
 
-export const gameSchema = S.Struct({
-  teams: S.Array(teamSchema).pipe(S.itemsCount(2)),
-  playerOrder: S.Array(playerSchema).pipe(S.itemsCount(4)),
+const gameUUIDSchema = Schema.UUID.pipe(Schema.brand("GameUUID"));
+export type GameUUID = typeof gameUUIDSchema.Type;
+
+export const gameSchema = Schema.Struct({
+  teams: Schema.Array(teamSchema).pipe(Schema.itemsCount(2)),
+  playerOrder: Schema.Array(playerSchema).pipe(Schema.itemsCount(4)),
 });
 
 export type Game = typeof gameSchema.Type;

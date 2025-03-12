@@ -1,7 +1,7 @@
-import { Effect, Option, pipe } from 'effect'
+import { Effect, Match, Option, pipe } from 'effect'
 import { Game } from 'shared/src/eventSchemas/datas/game'
 import { Player, Team } from 'shared/src/eventSchemas/datas/players'
-import { pushNewWaitingPlayer, retrieveWaitingPlayers } from './state'
+import { retrieveWaitingPlayers, setPlayerStateToWaitingForGame } from './state'
 
 function initGame(players: [Player, Player, Player, Player]): Game {
   const teamA: Team = {
@@ -24,21 +24,21 @@ function getPlayers(
   player: Player,
 ): Effect.Effect<Option.Option<[Player, Player, Player, Player]>> {
   return pipe(
-    Effect.promise(() => retrieveWaitingPlayers(3)),
+    Effect.promise(() => retrieveWaitingPlayers(4)),
     Effect.andThen((maybePlayers) =>
-      maybePlayers !== undefined
-        ? Effect.succeed(
-            Option.some([player, ...maybePlayers!] as [
-              Player,
-              Player,
-              Player,
-              Player,
-            ]),
-          )
-        : pipe(
-            Effect.promise(() => pushNewWaitingPlayer(player)),
+      Match.value(maybePlayers).pipe(
+        Match.when(undefined, () =>
+          pipe(
+            Effect.promise(() => setPlayerStateToWaitingForGame(player)),
             Effect.andThen(() => Effect.succeed(Option.none())),
           ),
+        ),
+        Match.orElse((players) =>
+          Effect.succeed(
+            Option.some(players as [Player, Player, Player, Player]),
+          ),
+        ),
+      ),
     ),
   )
 }
@@ -47,7 +47,8 @@ export function searchGameForPlayer(
   player: Player,
 ): Effect.Effect<Option.Option<Game>> {
   return pipe(
-    getPlayers(player),
+    Effect.promise(() => setPlayerStateToWaitingForGame(player)),
+    Effect.andThen(() => getPlayers(player)),
     Effect.map((maybePlayers) =>
       Option.match(maybePlayers, {
         onSome: (players) => Option.some(initGame(players)),

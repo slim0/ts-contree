@@ -1,11 +1,11 @@
 import { Schema } from "@effect/schema";
 
 const pingEventSchema = Schema.Struct({
-  event: Schema.Literal("ping"),
+  _tag: Schema.tag("PingEvent"),
 });
 
 const playGameEventSchema = Schema.Struct({
-  event: Schema.Literal("playGame"),
+  _tag: Schema.tag("PlayGameEvent"),
 });
 
 export const playerEventSchema = Schema.Union(

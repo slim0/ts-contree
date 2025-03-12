@@ -89,15 +89,16 @@ export class TestWebSocket extends WebSocket {
     includeExistingMessages: boolean = true,
     timeout: number = 1000,
   ): A | Promise<A> {
-    const alreadyMathingMessage =
+    const alreadyMatchingMessage =
       this.#messageMatchesSchemaAlreadyArrived(messageSchema)
-    if (includeExistingMessages && alreadyMathingMessage !== undefined) {
-      return Schema.decodeUnknownSync(messageSchema)(alreadyMathingMessage)
+    if (includeExistingMessages && alreadyMatchingMessage !== undefined) {
+      return Schema.decodeUnknownSync(messageSchema)(
+        JSON.parse(alreadyMatchingMessage),
+      )
     }
 
     const originalMessageIndex =
       this.#getLastMessageIndexThatMatchesSchema(messageSchema)
-
     return new Promise((resolve, reject) => {
       let timerId: NodeJS.Timeout | undefined
       function checkForMessage(event: MessageEvent): void {
@@ -127,7 +128,9 @@ export class TestWebSocket extends WebSocket {
 
         if (success)
           return resolve(
-            Schema.decodeUnknownSync(messageSchema)(alreadyMathingMessage),
+            Schema.decodeUnknownSync(messageSchema)(
+              JSON.parse(alreadyMatchingMessage!),
+            ),
           )
         reject(
           new Error(

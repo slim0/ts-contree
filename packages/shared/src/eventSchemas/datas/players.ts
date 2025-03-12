@@ -1,6 +1,6 @@
 import { Schema as S } from "@effect/schema";
 
-const playerUUIDSchema = S.UUID.pipe(S.brand("PlayerUUID"));
+export const playerUUIDSchema = S.UUID.pipe(S.brand("PlayerUUID"));
 export type PlayerUUID = typeof playerUUIDSchema.Type;
 
 export const playerSchema = S.Struct({

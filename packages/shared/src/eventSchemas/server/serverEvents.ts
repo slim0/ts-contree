@@ -1,24 +1,24 @@
 import { Schema } from "@effect/schema";
 import { gameSchema } from "../datas/game";
-import { playerSchema } from "../datas/players";
+import { playerUUIDSchema } from "../datas/players";
 
 // Success
 
 export const pongEventSchema = Schema.Struct({
-  event: Schema.Literal("pong"),
+  _tag: Schema.tag("PongEvent"),
 });
 
 export const playerConnectedEventSchema = Schema.Struct({
-  event: Schema.Literal("playerConnected"),
-  data: playerSchema,
+  _tag: Schema.tag("PlayerConnectedEvent"),
+  data: playerUUIDSchema,
 });
 
 export const waitingForGameEventSchema = Schema.Struct({
-  event: Schema.Literal("waitingForGame"),
+  _tag: Schema.tag("WaitingForGameEvent"),
 });
 
 export const gameStartedEventSchema = Schema.Struct({
-  event: Schema.Literal("gameStarted"),
+  _tag: Schema.tag("GameStartedEvent"),
   data: gameSchema,
 });
 
@@ -37,7 +37,7 @@ export type ServerEvent = typeof serverEventSchema.Type;
 // Error
 
 export const unparsableErrorEventSchema = Schema.Struct({
-  event: Schema.Literal("unparsableError"),
+  _tag: Schema.tag("UnparsableErrorEvent"),
   message: Schema.String,
 });
 

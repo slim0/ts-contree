@@ -1,33 +1,75 @@
 import { Mutex } from 'async-mutex'
+import { Game, GameUUID } from 'shared/src/eventSchemas/datas/game'
 import { Player, PlayerUUID } from 'shared/src/eventSchemas/datas/players'
+import WebSocket from 'ws'
 
 type State = {
-  waitingPlayers: Map<PlayerUUID, Player>
+  players: Map<
+    PlayerUUID,
+    {
+      player: Player
+      socket: WebSocket
+      state: 'connected' | 'waitingForGame' | 'playing'
+    }
+  >
+  games: Map<GameUUID, { game: Game }>
 }
 
 export const state: State = {
-  waitingPlayers: new Map(),
+  players: new Map(),
+  games: new Map(),
 }
 
 const waitingPlayersStateMutex = new Mutex()
 
-export async function pushNewWaitingPlayer(
-  newWaitingPlayer: Player,
+export async function addConnectedPlayer(
+  player: Player,
+  socket: WebSocket,
 ): Promise<void> {
   const release = await waitingPlayersStateMutex.acquire()
   try {
-    state.waitingPlayers.set(newWaitingPlayer.uuid, newWaitingPlayer)
+    state.players.set(player.uuid, { player, state: 'connected', socket })
   } finally {
     release()
   }
 }
 
-export async function deleteWaitingPlayer(
+export async function setPlayerStateToWaitingForGame(
+  player: Player,
+): Promise<void> {
+  const release = await waitingPlayersStateMutex.acquire()
+  const playerFromState = state.players.get(player.uuid)
+  try {
+    state.players.set(player.uuid, {
+      player,
+      socket: playerFromState!.socket,
+      state: 'waitingForGame',
+    })
+  } finally {
+    release()
+  }
+}
+
+export async function setPlayerStateToPlaying(player: Player): Promise<void> {
+  const release = await waitingPlayersStateMutex.acquire()
+  const playerFromState = state.players.get(player.uuid)
+  try {
+    state.players.set(player.uuid, {
+      player,
+      socket: playerFromState!.socket,
+      state: 'playing',
+    })
+  } finally {
+    release()
+  }
+}
+
+export async function deletePlayerFromState(
   waitingPlayer: Player,
 ): Promise<void> {
   const release = await waitingPlayersStateMutex.acquire()
   try {
-    state.waitingPlayers.delete(waitingPlayer.uuid)
+    state.players.delete(waitingPlayer.uuid)
   } finally {
     release()
   }
@@ -38,10 +80,15 @@ export async function retrieveWaitingPlayers(
 ): Promise<Player[] | undefined> {
   const release = await waitingPlayersStateMutex.acquire()
   try {
-    if (state.waitingPlayers.size >= 3) {
-      const players = Array.from(state.waitingPlayers.values()).splice(0, count)
-      players.map((player) => state.waitingPlayers.delete(player.uuid))
-      return players
+    const waitingPlayers = Array.from(state.players.entries()).filter(
+      ([uuid, player]) => player.state === 'waitingForGame',
+    )
+    if (waitingPlayers.length >= count) {
+      const players = waitingPlayers.splice(0, count)
+      players.map(
+        async ([_uuid, player]) => await setPlayerStateToPlaying(player.player),
+      )
+      return players.map(([_uuid, player]) => player.player)
     } else {
       return undefined
     }
