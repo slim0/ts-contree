@@ -50,10 +50,8 @@ describe('WebSocket Server', () => {
     const player3 = new TestWebSocket('player3', url)
     const player4 = new TestWebSocket('player4', url)
 
-    await new Promise((r) => setTimeout(r, 1000))
-
     await player1.waitUntil('open')
-    await player1.waitForEventSchema(playerConnectedEventSchema, true)
+    await player1.waitForEventSchema(playerConnectedEventSchema)
 
     await player2.waitUntil('open')
     await player2.waitForEventSchema(playerConnectedEventSchema)
@@ -81,9 +79,9 @@ describe('WebSocket Server', () => {
 
     player4.send(JSON.stringify(playGameEvent))
 
-    // await player1.waitForEventSchema(gameStartedEventSchema)
-    // await player2.waitForEventSchema(gameStartedEventSchema)
-    // await player3.waitForEventSchema(gameStartedEventSchema)
+    await player1.waitForEventSchema(gameStartedEventSchema)
+    await player2.waitForEventSchema(gameStartedEventSchema)
+    await player3.waitForEventSchema(gameStartedEventSchema)
     await player4.waitForEventSchema(gameStartedEventSchema)
 
     player1.close()

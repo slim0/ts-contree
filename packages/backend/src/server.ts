@@ -9,13 +9,14 @@ import {
 } from 'shared/src/eventSchemas/player/playerEvents'
 import {
   PlayerConnectedEvent,
+  PlayerNotFoundInStateEvent,
   ServerEvent,
   UnparsableErrorEvent,
 } from 'shared/src/eventSchemas/server/serverEvents'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
 import { searchGameForPlayer } from './core/game'
-import { addConnectedPlayer, deletePlayerFromState } from './core/state'
+import { addConnectedPlayer, deletePlayerFromState, state } from './core/state'
 
 export function createWebSocketServer(server: HTTPServer) {
   const webSocketServer = new WebSocketServer({ server })
@@ -90,6 +91,24 @@ function handleClientDisconnection(player: Player) {
   Effect.runPromiseExit(Effect.promise(() => deletePlayerFromState(player)))
 }
 
+function retrievePlayerConnectionsInState(
+  playerUUIDs: PlayerUUID[],
+): Effect.Effect<WebSocket[], PlayerNotFoundInStateEvent> {
+  return pipe(
+    Effect.forEach(playerUUIDs, (playerUUID) => {
+      const playerFromState = state.players.get(playerUUID)
+      if (playerFromState !== undefined) {
+        return Effect.succeed(playerFromState.socket)
+      } else {
+        return Effect.fail({
+          _tag: 'PlayerNotFoundInStateEvent' as const,
+          message: `Unable to find player in state with UUID ${playerUUID}`,
+        })
+      }
+    }),
+  )
+}
+
 async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   const connectedPlayer: Player = { uuid: uuidv4() as PlayerUUID }
   console.log(`Client with userId=${connectedPlayer.uuid} connected`)
@@ -105,21 +124,34 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
     Effect.runPromiseExit(
       pipe(
         processReceivedWebSocketMessage(message, connectedPlayer),
-        Effect.mapBoth({
-          onSuccess: (response) =>
-            Match.type<ServerEvent>().pipe(
-              Match.tag('PongEvent', 'WaitingForGameEvent', () =>
+        Effect.andThen((response) =>
+          Match.type<ServerEvent>().pipe(
+            Match.tag('PongEvent', 'WaitingForGameEvent', () =>
+              Effect.succeed(
                 webSocketClientConnection.send(JSON.stringify(response)),
               ),
-              Match.tag('GameStartedEvent', (event) => {
-                webSocketClientConnection.send(JSON.stringify(response))
-              }),
-              Match.exhaustive,
-            )(response),
-          onFailure: (errorResponse) => {
-            console.error(errorResponse.message)
-            webSocketClientConnection.send(JSON.stringify(errorResponse))
-          },
+            ),
+            Match.tag('GameStartedEvent', (event) =>
+              pipe(
+                Effect.succeed(
+                  event.data.playerOrder.map((player) => player.uuid),
+                ),
+                Effect.andThen((playerUUIDs) =>
+                  retrievePlayerConnectionsInState(playerUUIDs),
+                ),
+                Effect.andThen((connections) =>
+                  Effect.forEach(connections, (connection) =>
+                    Effect.succeed(connection.send(JSON.stringify(response))),
+                  ),
+                ),
+              ),
+            ),
+            Match.exhaustive,
+          )(response),
+        ),
+        Effect.mapError((errorResponse) => {
+          console.error(errorResponse.message)
+          webSocketClientConnection.send(JSON.stringify(errorResponse))
         }),
       ),
     )
