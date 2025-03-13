@@ -35,7 +35,7 @@ export async function addConnectedPlayer(
   }
 }
 
-async function getStatePlayer(
+export async function getStatePlayer(
   playerUUID: PlayerUUID,
   alreadyLock: boolean,
 ): Promise<StatePlayer | undefined> {

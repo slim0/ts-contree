@@ -1,5 +1,5 @@
 import { Schema } from "@effect/schema";
-import { gameSchema } from "../datas/game";
+import { gameResponseSchema } from "../datas/game";
 import { playerSchema } from "../datas/players";
 
 // Success
@@ -19,20 +19,25 @@ export const waitingForGameEventSchema = Schema.Struct({
 
 export const gameStartedEventSchema = Schema.Struct({
   _tag: Schema.tag("GameStartedEvent"),
-  data: gameSchema,
+  data: gameResponseSchema,
 });
 
-export const serverEventSchema = Schema.Union(
+export const gameStartedEventsSchema = Schema.Struct({
+  _tag: Schema.tag("GameStartedEvents"),
+  data: Schema.Array(gameStartedEventSchema),
+});
+
+const serverReponseEventsSchema = Schema.Union(
   pongEventSchema,
   waitingForGameEventSchema,
-  gameStartedEventSchema,
+  gameStartedEventsSchema,
 );
 
 export type PongEvent = typeof pongEventSchema.Type;
 export type PlayerConnectedEvent = typeof playerConnectedEventSchema.Type;
 export type WaitingForGameEvent = typeof waitingForGameEventSchema.Type;
-export type GameStartedEvent = typeof gameStartedEventSchema.Type;
-export type ServerEvent = typeof serverEventSchema.Type;
+export type GameStartedEvents = typeof gameStartedEventsSchema.Type;
+export type ServerEventsReponses = typeof serverReponseEventsSchema.Type;
 
 // Error
 

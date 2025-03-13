@@ -9,7 +9,7 @@ import {
 } from 'shared/src/eventSchemas/player/playerEvents'
 import {
   PlayerConnectedEvent,
-  ServerEvent,
+  ServerEventsReponses,
   UnparsableErrorEvent,
 } from 'shared/src/eventSchemas/server/serverEvents'
 import { v4 as uuidv4 } from 'uuid'
@@ -18,7 +18,7 @@ import { searchGame } from './core/game'
 import {
   addConnectedPlayer,
   deletePlayerFromState,
-  retrieveStatePlayers,
+  getStatePlayer,
 } from './core/state'
 
 export function createWebSocketServer(server: HTTPServer) {
@@ -41,7 +41,7 @@ createWebSocketServer(httpServer)
 function treatPlayerEvent(
   connectedUser: Player,
   playerEvent: PlayerEvent,
-): Effect.Effect<ServerEvent> {
+): Effect.Effect<ServerEventsReponses> {
   return Match.type<PlayerEvent>().pipe(
     Match.tag('PingEvent', () =>
       Effect.succeed({
@@ -50,15 +50,10 @@ function treatPlayerEvent(
     ),
     Match.tag('PlayGameEvent', () =>
       pipe(
-        searchGame(connectedUser),
-        Effect.map((maybeGame) =>
-          Option.match(maybeGame, {
-            onSome: (game) => {
-              return {
-                _tag: 'GameStartedEvent' as const,
-                data: game,
-              }
-            },
+        searchGame(connectedUser, 4),
+        Effect.map((maybeGameResponses) =>
+          Option.match(maybeGameResponses, {
+            onSome: (gameResponses) => gameResponses,
             onNone: () => {
               return {
                 _tag: 'WaitingForGameEvent' as const,
@@ -75,7 +70,7 @@ function treatPlayerEvent(
 function processReceivedWebSocketMessage(
   message: RawData,
   connectedUser: Player,
-): Effect.Effect<ServerEvent, UnparsableErrorEvent> {
+): Effect.Effect<ServerEventsReponses, UnparsableErrorEvent> {
   return pipe(
     S.decodeUnknownEither(playerEventSchema)(JSON.parse(message.toString())),
     Effect.andThen((parsedMessage) =>
@@ -110,24 +105,25 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
       pipe(
         processReceivedWebSocketMessage(message, connectedPlayer),
         Effect.andThen((response) =>
-          Match.type<ServerEvent>().pipe(
+          Match.type<ServerEventsReponses>().pipe(
             Match.tag('PongEvent', 'WaitingForGameEvent', () =>
               Effect.succeed(
                 webSocketClientConnection.send(JSON.stringify(response)),
               ),
             ),
-            Match.tag('GameStartedEvent', (event) =>
+            Match.tag('GameStartedEvents', (gameStartedEvents) =>
               pipe(
-                Effect.succeed(
-                  event.data.playerOrder.map((player) => player.uuid),
-                ),
-                Effect.andThen((playerUUIDs) =>
-                  retrieveStatePlayers(playerUUIDs),
-                ),
-                Effect.andThen((statePlayers) =>
-                  Effect.forEach(statePlayers, (statePlayer) =>
-                    Effect.succeed(
-                      statePlayer?.socket.send(JSON.stringify(response)), // TODO: treat case where user is no longer in state
+                Effect.forEach(gameStartedEvents.data, (gameStartedEvent) =>
+                  pipe(
+                    Effect.promise(() =>
+                      getStatePlayer(gameStartedEvent.data.playerUUID, false),
+                    ),
+                    Effect.andThen((statePlayer) =>
+                      Effect.succeed(
+                        statePlayer?.socket.send(
+                          JSON.stringify(gameStartedEvent),
+                        ),
+                      ),
                     ),
                   ),
                 ),

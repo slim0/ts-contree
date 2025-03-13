@@ -1,24 +1,38 @@
-type SpadesColor = "spades";
-type ClubsColor = "clubs";
-type HeartsColor = "hearts";
-type DiamondsColor = "diamonds";
+import { Schema } from "@effect/schema";
 
-export type Color = SpadesColor | ClubsColor | HeartsColor | DiamondsColor;
+const spadesColorSchema = Schema.Literal("spades");
+const clubsColorSchema = Schema.Literal("clubs");
+const heartsColorSchema = Schema.Literal("hearts");
+const diamondsColorSchema = Schema.Literal("diamonds");
 
-export type CardName =
-  | "As"
-  | "Seven"
-  | "Eight"
-  | "Nine"
-  | "Ten"
-  | "Jack"
-  | "Queen"
-  | "King";
+export const colorSchema = Schema.Union(
+  spadesColorSchema,
+  clubsColorSchema,
+  heartsColorSchema,
+  diamondsColorSchema,
+);
 
-export type Card = {
-  name: CardName;
-  color: Color;
-};
+export type Color = typeof colorSchema.Type;
+
+export const cardNameSchema = Schema.Literal(
+  "As",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Jack",
+  "Queen",
+  "King",
+);
+
+export type CardName = typeof cardNameSchema.Type;
+
+export const cardSchema = Schema.Struct({
+  name: cardNameSchema,
+  color: colorSchema,
+});
+
+export type Card = typeof cardSchema.Type;
 
 export const asOfSpades: Card = {
   name: "As",
@@ -219,3 +233,6 @@ export const deckOf32Cards = [
   queenOfDiamonds,
   kingOfDiamonds,
 ];
+
+export const handSchema = Schema.Array(cardSchema);
+export type Hand = typeof handSchema.Type;
