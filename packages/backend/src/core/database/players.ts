@@ -2,7 +2,6 @@ import { Mutex } from 'async-mutex'
 import { Card } from 'shared/src/eventSchemas/datas/cards'
 import { Player, PlayerUUID } from 'shared/src/eventSchemas/datas/players'
 import WebSocket from 'ws'
-
 type PlayerStatus = 'connected' | 'waitingForGame' | 'playing'
 
 type PlayerState = {
