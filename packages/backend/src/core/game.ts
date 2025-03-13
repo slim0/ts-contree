@@ -66,7 +66,7 @@ function searchAvailablePlayers(
             Effect.promise(() => setPlayerStatus(player.uuid, 'playing')),
             Effect.andThen(() =>
               Effect.succeed(
-                Option.some([player, ...players] as [
+                Option.some([...players, player] as [
                   Player,
                   Player,
                   Player,

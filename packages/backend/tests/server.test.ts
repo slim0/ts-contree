@@ -98,14 +98,60 @@ describe('WebSocket Server', () => {
 
     player4Connection.send(JSON.stringify(playGameEvent))
 
-    await player1Connection.waitForEventSchema(gameStartedEventSchema)
+    const player1GameStartedEvent = await player1Connection.waitForEventSchema(
+      gameStartedEventSchema,
+    )
     expect(state.players.get(player1.uuid)?.status).toBe('playing')
-    await player2Connection.waitForEventSchema(gameStartedEventSchema)
+    expect(player1GameStartedEvent.data.asset).toBe(undefined)
+    expect(player1GameStartedEvent.data.hand.length).toBe(0) // TODO: toBe 8
+    expect(player1GameStartedEvent.data.game.teams[0].score).toBe(0)
+    expect(player1GameStartedEvent.data.game.teams[1].score).toBe(0)
+    expect(player1GameStartedEvent.data.game.teams[0].players).toStrictEqual([
+      player1,
+      player3,
+    ])
+    expect(player1GameStartedEvent.data.game.teams[1].players).toStrictEqual([
+      player2,
+      player4,
+    ])
+    expect(player1GameStartedEvent.data.game.playerOrder).toStrictEqual([
+      player1,
+      player2,
+      player3,
+      player4,
+    ])
+
+    const player2GameStartedEvent = await player2Connection.waitForEventSchema(
+      gameStartedEventSchema,
+    )
     expect(state.players.get(player2.uuid)?.status).toBe('playing')
-    await player3Connection.waitForEventSchema(gameStartedEventSchema)
+    expect(player2GameStartedEvent.data.asset).toBe(undefined)
+    expect(player2GameStartedEvent.data.hand.length).toBe(0)
+    expect(player2GameStartedEvent.data.game).toStrictEqual(
+      player1GameStartedEvent.data.game,
+    )
+
+    const player3GameStartedEvent = await player3Connection.waitForEventSchema(
+      gameStartedEventSchema,
+    )
     expect(state.players.get(player3.uuid)?.status).toBe('playing')
-    await player4Connection.waitForEventSchema(gameStartedEventSchema)
+    expect(player3GameStartedEvent.data.asset).toBe(undefined)
+    expect(player3GameStartedEvent.data.hand.length).toBe(0)
+    expect(player3GameStartedEvent.data.game).toStrictEqual(
+      player1GameStartedEvent.data.game,
+    )
+
+    const player4GameStartedEvent = await player4Connection.waitForEventSchema(
+      gameStartedEventSchema,
+    )
     expect(state.players.get(player4.uuid)?.status).toBe('playing')
+    expect(state.players.get(player3.uuid)?.status).toBe('playing')
+    expect(state.players.get(player2.uuid)?.status).toBe('playing')
+    expect(player4GameStartedEvent.data.asset).toBe(undefined)
+    expect(player4GameStartedEvent.data.hand.length).toBe(0)
+    expect(player4GameStartedEvent.data.game).toStrictEqual(
+      player1GameStartedEvent.data.game,
+    )
 
     player1Connection.close()
     player2Connection.close()
