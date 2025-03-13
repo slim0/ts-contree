@@ -236,3 +236,7 @@ export const deckOf32Cards = [
 
 export const handSchema = Schema.Array(cardSchema);
 export type Hand = typeof handSchema.Type;
+
+export function stringifyCard(card: Card): string {
+  return `${card.name} of ${card.color}`;
+}

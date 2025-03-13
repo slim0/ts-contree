@@ -1,4 +1,8 @@
-import { countPointsCards, findBestCardInList } from 'backend/src/core/cards'
+import {
+  countPointsCards,
+  findBestCardInList,
+  shuffleArray,
+} from 'backend/src/core/cards'
 import {
   deckOf32Cards,
   jackOfHearts,
@@ -21,4 +25,9 @@ test('find best card in list with assets', () => {
 
 test('count total points in deck of 32 cards', () => {
   expect(countPointsCards(deckOf32Cards, 'diamonds')).toBe(152)
+})
+
+test('shuffle array', () => {
+  const shuffledDeck = shuffleArray(deckOf32Cards)
+  expect(shuffledDeck.length).toBe(deckOf32Cards.length)
 })

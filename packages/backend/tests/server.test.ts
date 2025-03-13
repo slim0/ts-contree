@@ -1,5 +1,9 @@
 import { Server } from 'node:http'
 import {
+  deckOf32Cards,
+  stringifyCard,
+} from 'shared/src/eventSchemas/datas/cards'
+import {
   PingEvent,
   PlayGameEvent,
 } from 'shared/src/eventSchemas/player/playerEvents'
@@ -102,8 +106,9 @@ describe('WebSocket Server', () => {
       gameStartedEventSchema,
     )
     expect(state.players.get(player1.uuid)?.status).toBe('playing')
+    expect(player1GameStartedEvent.data.playerUUID).toBe(player1.uuid)
     expect(player1GameStartedEvent.data.asset).toBe(undefined)
-    expect(player1GameStartedEvent.data.hand.length).toBe(0) // TODO: toBe 8
+    expect(player1GameStartedEvent.data.hand.length).toBe(8)
     expect(player1GameStartedEvent.data.game.teams[0].score).toBe(0)
     expect(player1GameStartedEvent.data.game.teams[1].score).toBe(0)
     expect(player1GameStartedEvent.data.game.teams[0].players).toStrictEqual([
@@ -125,8 +130,9 @@ describe('WebSocket Server', () => {
       gameStartedEventSchema,
     )
     expect(state.players.get(player2.uuid)?.status).toBe('playing')
+    expect(player2GameStartedEvent.data.playerUUID).toBe(player2.uuid)
     expect(player2GameStartedEvent.data.asset).toBe(undefined)
-    expect(player2GameStartedEvent.data.hand.length).toBe(0)
+    expect(player2GameStartedEvent.data.hand.length).toBe(8)
     expect(player2GameStartedEvent.data.game).toStrictEqual(
       player1GameStartedEvent.data.game,
     )
@@ -135,8 +141,9 @@ describe('WebSocket Server', () => {
       gameStartedEventSchema,
     )
     expect(state.players.get(player3.uuid)?.status).toBe('playing')
+    expect(player3GameStartedEvent.data.playerUUID).toBe(player3.uuid)
     expect(player3GameStartedEvent.data.asset).toBe(undefined)
-    expect(player3GameStartedEvent.data.hand.length).toBe(0)
+    expect(player3GameStartedEvent.data.hand.length).toBe(8)
     expect(player3GameStartedEvent.data.game).toStrictEqual(
       player1GameStartedEvent.data.game,
     )
@@ -145,13 +152,30 @@ describe('WebSocket Server', () => {
       gameStartedEventSchema,
     )
     expect(state.players.get(player4.uuid)?.status).toBe('playing')
-    expect(state.players.get(player3.uuid)?.status).toBe('playing')
-    expect(state.players.get(player2.uuid)?.status).toBe('playing')
+    expect(player4GameStartedEvent.data.playerUUID).toBe(player4.uuid)
     expect(player4GameStartedEvent.data.asset).toBe(undefined)
-    expect(player4GameStartedEvent.data.hand.length).toBe(0)
+    expect(player4GameStartedEvent.data.hand.length).toBe(8)
     expect(player4GameStartedEvent.data.game).toStrictEqual(
       player1GameStartedEvent.data.game,
     )
+
+    const distributedCardsStrings = new Set(
+      player1GameStartedEvent.data.hand
+        .concat(player2GameStartedEvent.data.hand)
+        .concat(player3GameStartedEvent.data.hand)
+        .concat(player4GameStartedEvent.data.hand)
+        .map((card) => stringifyCard(card)),
+    )
+
+    const deckOf32CardsStrings = new Set(
+      deckOf32Cards.map((card) => stringifyCard(card)),
+    )
+    const intersection = new Set(
+      [...distributedCardsStrings].filter((x) => deckOf32CardsStrings.has(x)),
+    )
+
+    expect(distributedCardsStrings.size).toBe(deckOf32Cards.length)
+    expect(intersection.size).toBe(deckOf32Cards.length)
 
     player1Connection.close()
     player2Connection.close()
