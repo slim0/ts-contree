@@ -145,6 +145,6 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   })
 
   webSocketClientConnection.on('close', () => {
-    handleClientDisconnection(connectedPlayer)
+    handleClientDisconnection(connectedPlayer) // TODO: replace a player in case it was playing
   })
 }
