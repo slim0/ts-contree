@@ -11,8 +11,8 @@ type TeamName = 'Red Devil' | 'Black Mamba'
 
 type TeamState = {
   name: TeamName
-  player1: PlayerUUID
-  player2: PlayerUUID
+  player1_UUID: PlayerUUID
+  player2_UUID: PlayerUUID
   score: number
 }
 
@@ -32,8 +32,8 @@ export async function createTeam(
   try {
     teamsState.set(uuidv4() as TeamUUID, {
       name: name,
-      player1,
-      player2,
+      player1_UUID: player1,
+      player2_UUID: player2,
       score: 0,
     })
   } finally {

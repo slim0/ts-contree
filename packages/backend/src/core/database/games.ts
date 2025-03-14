@@ -9,8 +9,8 @@ export type GameUUID = typeof gameUUIDSchema.Type
 type GameStatus = 'start' | 'pending' | 'finish'
 
 type GameState = {
-  teamA: TeamUUID
-  teamB: TeamUUID
+  teamA_UUID: TeamUUID
+  teamB_UUID: TeamUUID
   status: GameStatus
 }
 
@@ -27,8 +27,8 @@ export async function createGame(
   const release = await mutex.acquire()
   try {
     gamesState.set(uuidv4() as GameUUID, {
-      teamA,
-      teamB,
+      teamA_UUID: teamA,
+      teamB_UUID: teamB,
       status: 'start',
     })
   } finally {
