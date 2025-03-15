@@ -2,10 +2,8 @@ import { Schema as S } from '@effect/schema'
 import { Effect, Match, Option, pipe } from 'effect'
 import express from 'express'
 import { Server as HTTPServer } from 'http'
-import { Game } from 'shared/src/messages/datas/game'
-import { Party } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
-import { Team, TeamPlayer } from 'shared/src/messages/datas/team'
+import { TeamPlayer } from 'shared/src/messages/datas/team'
 import {
   PlayerMessage,
   playerMessageSchema,
@@ -147,13 +145,13 @@ function processPlayerMessage(
                               player1: {
                                 uuid: gameStartedEvent.data.teamA.row
                                   .player1_UUID,
-                              } as TeamPlayer,
+                              },
                               player2: {
                                 uuid: gameStartedEvent.data.teamA.row
                                   .player2_UUID,
-                              } as TeamPlayer,
+                              },
                               score: gameStartedEvent.data.teamA.row.score,
-                            } as Team,
+                            },
                             teamB: {
                               uuid: gameStartedEvent.data.teamB.uuid,
                               name: gameStartedEvent.data.teamB.row.name,
@@ -166,7 +164,7 @@ function processPlayerMessage(
                                   .player2_UUID,
                               } as TeamPlayer,
                               score: gameStartedEvent.data.teamB.row.score,
-                            } as Team,
+                            },
                             currentParty: {
                               uuid: gameStartedEvent.data.party.uuid,
                               status: gameStartedEvent.data.party.row.status,
@@ -175,8 +173,8 @@ function processPlayerMessage(
                                 gameStartedEvent.data.party.row
                                   .indexCurrentPlayer,
                               folds: gameStartedEvent.data.party.row.folds,
-                            } as Party,
-                          } as Game,
+                            },
+                          },
                         },
                       },
                     }),
