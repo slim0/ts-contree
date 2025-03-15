@@ -1,18 +1,5 @@
 import { Schema } from "@effect/schema";
-
-const spadesColorSchema = Schema.Literal("spades");
-const clubsColorSchema = Schema.Literal("clubs");
-const heartsColorSchema = Schema.Literal("hearts");
-const diamondsColorSchema = Schema.Literal("diamonds");
-
-export const colorSchema = Schema.Union(
-  spadesColorSchema,
-  clubsColorSchema,
-  heartsColorSchema,
-  diamondsColorSchema,
-);
-
-export type Color = typeof colorSchema.Type;
+import { colorSchema } from "./color";
 
 export const cardNameSchema = Schema.Literal(
   "As",
@@ -194,11 +181,6 @@ export const kingOfDiamonds: Card = {
   color: "diamonds",
 };
 
-export type Fold = {
-  cards: [Card, Card, Card, Card];
-  isLastFold: boolean;
-};
-
 export const deckOf32Cards = [
   asOfSpades,
   sevenOfSpades,
@@ -233,9 +215,6 @@ export const deckOf32Cards = [
   queenOfDiamonds,
   kingOfDiamonds,
 ];
-
-export const handSchema = Schema.Array(cardSchema);
-export type Hand = typeof handSchema.Type;
 
 export function stringifyCard(card: Card): string {
   return `${card.name} of ${card.color}`;

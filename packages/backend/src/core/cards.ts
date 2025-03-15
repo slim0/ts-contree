@@ -1,5 +1,6 @@
 import { exhaustiveCheck } from 'backend/src/typescript-tools'
-import { Card, CardName, Color } from 'shared/src/eventSchemas/datas/cards'
+import { Card, CardName } from 'shared/src/messages/datas/cards'
+import { Color } from 'shared/src/messages/datas/color'
 
 function isCardAnAsset(card: Card, assetColor: Color): boolean {
   return card.color === assetColor

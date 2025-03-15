@@ -1,22 +1,20 @@
-import { Schema } from '@effect/schema'
 import { Mutex } from 'async-mutex'
-import { PlayerUUID } from 'shared/src/eventSchemas/datas/players'
+import { PlayerUUID } from 'shared/src/messages/datas/player'
+import { TeamName, TeamScore, TeamUUID } from 'shared/src/messages/datas/team'
 import { v4 as uuidv4 } from 'uuid'
-import WebSocket from 'ws'
 
-export const teamUUIDSchema = Schema.UUID.pipe(Schema.brand('PlayerUUID'))
-export type TeamUUID = typeof teamUUIDSchema.Type
-
-type TeamName = 'Red Devil' | 'Black Mamba'
-
-type TeamState = {
+export type TeamRow = {
   name: TeamName
   player1_UUID: PlayerUUID
   player2_UUID: PlayerUUID
-  score: number
+  score: TeamScore
+}
+export type TeamState = {
+  uuid: TeamUUID
+  row: TeamRow
 }
 
-type TeamsState = Map<TeamUUID, TeamState>
+type TeamsState = Map<TeamUUID, TeamRow>
 
 export const teamsState: TeamsState = new Map()
 
@@ -26,16 +24,21 @@ export async function createTeam(
   name: TeamName,
   player1: PlayerUUID,
   player2: PlayerUUID,
-  connection: WebSocket,
-): Promise<void> {
+): Promise<TeamState> {
   const release = await mutex.acquire()
   try {
-    teamsState.set(uuidv4() as TeamUUID, {
+    const uuid = uuidv4() as TeamUUID
+    const row = {
       name: name,
       player1_UUID: player1,
       player2_UUID: player2,
       score: 0,
-    })
+    }
+    teamsState.set(uuid, row)
+    return {
+      uuid,
+      row,
+    }
   } finally {
     release()
   }
