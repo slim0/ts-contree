@@ -104,7 +104,11 @@ describe('WebSocket Server', () => {
       true,
     )
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    // expect(player1GameStartedEvent.data.playerUUID).toBe(player1.uuid)
+    expect(player1GameStartedEvent.data.currentParty.asset).toBe(null)
+    expect(player1GameStartedEvent.data.currentParty.folds.length).toBe(0)
+    expect(player1GameStartedEvent.data.currentParty.indexCurrentPlayer).toBe(0)
+    expect(player1GameStartedEvent.data.currentParty.status).toBe('start')
+
     // expect(player1GameStartedEvent.data.asset).toBe(undefined)
     // expect(player1GameStartedEvent.data.hand.length).toBe(8)
     // expect(player1GameStartedEvent.data.game.teams[0].score).toBe(0)
@@ -128,7 +132,9 @@ describe('WebSocket Server', () => {
       gameStartedMessageSchema,
     )
     expect(playersState.get(player2.uuid)?.status).toBe('playing')
-    // expect(player2GameStartedEvent.data.playerUUID).toBe(player2.uuid)
+    expect(player2GameStartedEvent.data.currentParty).toStrictEqual(
+      player1GameStartedEvent.data.currentParty,
+    )
     // expect(player2GameStartedEvent.data.asset).toBe(undefined)
     // expect(player2GameStartedEvent.data.hand.length).toBe(8)
     // expect(player2GameStartedEvent.data.game).toStrictEqual(
@@ -139,7 +145,9 @@ describe('WebSocket Server', () => {
       gameStartedMessageSchema,
     )
     expect(playersState.get(player3.uuid)?.status).toBe('playing')
-    // expect(player3GameStartedEvent.data.playerUUID).toBe(player3.uuid)
+    expect(player3GameStartedEvent.data.currentParty).toStrictEqual(
+      player1GameStartedEvent.data.currentParty,
+    )
     // expect(player3GameStartedEvent.data.asset).toBe(undefined)
     // expect(player3GameStartedEvent.data.hand.length).toBe(8)
     // expect(player3GameStartedEvent.data.game).toStrictEqual(
@@ -150,7 +158,9 @@ describe('WebSocket Server', () => {
       gameStartedMessageSchema,
     )
     expect(playersState.get(player4.uuid)?.status).toBe('playing')
-    // expect(player4GameStartedEvent.data.playerUUID).toBe(player4.uuid)
+    expect(player4GameStartedEvent.data.currentParty).toStrictEqual(
+      player1GameStartedEvent.data.currentParty,
+    )
     // expect(player4GameStartedEvent.data.asset).toBe(undefined)
     // expect(player4GameStartedEvent.data.hand.length).toBe(8)
     // expect(player4GameStartedEvent.data.game).toStrictEqual(
