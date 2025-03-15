@@ -85,6 +85,34 @@ function constructGameStartedMessageFromInitializedGame(
   })
 }
 
+function gameStartedResponsesFromInitializedGame(
+  initializedGame: InitializedGame,
+): Effect.Effect<{ playerState: PlayerState; data: GameStartedMessage }[]> {
+  return pipe(
+    Effect.succeed(
+      getPlayers(initializedGame.teamA.row, initializedGame.teamB.row),
+    ),
+    Effect.andThen((playersUUID) =>
+      Effect.forEach(playersUUID, (playerUUID) =>
+        pipe(
+          Effect.promise(() => getStatePlayer(playerUUID)),
+          Effect.andThen((playerState) =>
+            pipe(
+              constructGameStartedMessageFromInitializedGame(initializedGame),
+              Effect.andThen((gameStartedMessage) =>
+                Effect.succeed({
+                  playerState,
+                  data: gameStartedMessage,
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  )
+}
+
 function treatPlayerMessage(
   connectedPlayerState: PlayerState,
   playerEvent: PlayerMessage,
@@ -107,34 +135,7 @@ function treatPlayerMessage(
           Effect.andThen((maybeInitializedGame) =>
             Option.match(maybeInitializedGame, {
               onSome: (initializedGame) =>
-                pipe(
-                  Effect.succeed(
-                    getPlayers(
-                      initializedGame.teamA.row,
-                      initializedGame.teamB.row,
-                    ),
-                  ),
-                  Effect.andThen((playersUUID) =>
-                    Effect.forEach(playersUUID, (playerUUID) =>
-                      pipe(
-                        Effect.promise(() => getStatePlayer(playerUUID)),
-                        Effect.andThen((playerState) =>
-                          pipe(
-                            constructGameStartedMessageFromInitializedGame(
-                              initializedGame,
-                            ),
-                            Effect.andThen((gameStartedMessage) =>
-                              Effect.succeed({
-                                playerState,
-                                data: gameStartedMessage,
-                              }),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                gameStartedResponsesFromInitializedGame(initializedGame),
               onNone: () =>
                 Effect.succeed([
                   {
