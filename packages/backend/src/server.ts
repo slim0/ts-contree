@@ -138,44 +138,46 @@ function processPlayerMessage(
                       data: {
                         _tag: 'GameStartedMessage' as const,
                         data: {
-                          uuid: gameStartedEvent.data.game.uuid,
-                          status: gameStartedEvent.data.game.row.status,
-                          teamA: {
-                            uuid: gameStartedEvent.data.teamA.uuid,
-                            name: gameStartedEvent.data.teamA.row.name,
-                            player1: {
-                              uuid: gameStartedEvent.data.teamA.row
-                                .player1_UUID,
-                            } as TeamPlayer,
-                            player2: {
-                              uuid: gameStartedEvent.data.teamA.row
-                                .player2_UUID,
-                            } as TeamPlayer,
-                            score: gameStartedEvent.data.teamA.row.score,
-                          } as Team,
-                          teamB: {
-                            uuid: gameStartedEvent.data.teamB.uuid,
-                            name: gameStartedEvent.data.teamB.row.name,
-                            player1: {
-                              uuid: gameStartedEvent.data.teamB.row
-                                .player1_UUID,
-                            } as TeamPlayer,
-                            player2: {
-                              uuid: gameStartedEvent.data.teamB.row
-                                .player2_UUID,
-                            } as TeamPlayer,
-                            score: gameStartedEvent.data.teamB.row.score,
-                          } as Team,
-                          currentParty: {
-                            uuid: gameStartedEvent.data.party.uuid,
-                            status: gameStartedEvent.data.party.row.status,
-                            asset: gameStartedEvent.data.party.row.asset,
-                            indexCurrentPlayer:
-                              gameStartedEvent.data.party.row
-                                .indexCurrentPlayer,
-                            folds: gameStartedEvent.data.party.row.folds,
-                          } as Party,
-                        } as Game,
+                          game: {
+                            uuid: gameStartedEvent.data.game.uuid,
+                            status: gameStartedEvent.data.game.row.status,
+                            teamA: {
+                              uuid: gameStartedEvent.data.teamA.uuid,
+                              name: gameStartedEvent.data.teamA.row.name,
+                              player1: {
+                                uuid: gameStartedEvent.data.teamA.row
+                                  .player1_UUID,
+                              } as TeamPlayer,
+                              player2: {
+                                uuid: gameStartedEvent.data.teamA.row
+                                  .player2_UUID,
+                              } as TeamPlayer,
+                              score: gameStartedEvent.data.teamA.row.score,
+                            } as Team,
+                            teamB: {
+                              uuid: gameStartedEvent.data.teamB.uuid,
+                              name: gameStartedEvent.data.teamB.row.name,
+                              player1: {
+                                uuid: gameStartedEvent.data.teamB.row
+                                  .player1_UUID,
+                              } as TeamPlayer,
+                              player2: {
+                                uuid: gameStartedEvent.data.teamB.row
+                                  .player2_UUID,
+                              } as TeamPlayer,
+                              score: gameStartedEvent.data.teamB.row.score,
+                            } as Team,
+                            currentParty: {
+                              uuid: gameStartedEvent.data.party.uuid,
+                              status: gameStartedEvent.data.party.row.status,
+                              asset: gameStartedEvent.data.party.row.asset,
+                              indexCurrentPlayer:
+                                gameStartedEvent.data.party.row
+                                  .indexCurrentPlayer,
+                              folds: gameStartedEvent.data.party.row.folds,
+                            } as Party,
+                          } as Game,
+                        },
                       },
                     }),
                   ),

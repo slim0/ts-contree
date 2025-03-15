@@ -57,7 +57,7 @@ export function searchForNewGame(
             Effect.Do,
             Effect.bind('teamA', () =>
               Effect.promise(() =>
-                createTeam('Black Mamba', players[0].uuid, players[1].uuid),
+                createTeam('Red Devil', players[0].uuid, players[1].uuid),
               ),
             ),
             Effect.bind('teamB', () =>

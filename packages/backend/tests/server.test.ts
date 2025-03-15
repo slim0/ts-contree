@@ -104,36 +104,39 @@ describe('WebSocket Server', () => {
       true,
     )
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    expect(player1GameStartedEvent.data.currentParty.asset).toBe(null)
-    expect(player1GameStartedEvent.data.currentParty.folds.length).toBe(0)
-    expect(player1GameStartedEvent.data.currentParty.indexCurrentPlayer).toBe(0)
-    expect(player1GameStartedEvent.data.currentParty.status).toBe('start')
+    expect(player1GameStartedEvent.data.game.currentParty.asset).toBe(null)
+    expect(player1GameStartedEvent.data.game.currentParty.folds.length).toBe(0)
+    expect(
+      player1GameStartedEvent.data.game.currentParty.indexCurrentPlayer,
+    ).toBe(0)
+    expect(player1GameStartedEvent.data.game.currentParty.status).toBe('start')
 
-    // expect(player1GameStartedEvent.data.asset).toBe(undefined)
-    // expect(player1GameStartedEvent.data.hand.length).toBe(8)
-    // expect(player1GameStartedEvent.data.game.teams[0].score).toBe(0)
-    // expect(player1GameStartedEvent.data.game.teams[1].score).toBe(0)
-    // expect(player1GameStartedEvent.data.game.teams[0].players).toStrictEqual([
-    //   player1,
-    //   player3,
-    // ])
-    // expect(player1GameStartedEvent.data.game.teams[1].players).toStrictEqual([
-    //   player2,
-    //   player4,
-    // ])
-    // expect(player1GameStartedEvent.data.game.playerOrder).toStrictEqual([
-    //   player1,
-    //   player2,
-    //   player3,
-    //   player4,
-    // ])
+    expect(player1GameStartedEvent.data.game.status).toBe('start')
+
+    expect(player1GameStartedEvent.data.game.teamA.score).toBe(0)
+    expect(player1GameStartedEvent.data.game.teamA.name).toBe('Red Devil')
+    expect(player1GameStartedEvent.data.game.teamA.player1.uuid).toBe(
+      player1.uuid,
+    )
+    expect(player1GameStartedEvent.data.game.teamA.player2.uuid).toBe(
+      player2.uuid,
+    )
+
+    expect(player1GameStartedEvent.data.game.teamB.score).toBe(0)
+    expect(player1GameStartedEvent.data.game.teamB.name).toBe('Black Mamba')
+    expect(player1GameStartedEvent.data.game.teamB.player1.uuid).toBe(
+      player3.uuid,
+    )
+    expect(player1GameStartedEvent.data.game.teamB.player2.uuid).toBe(
+      player4.uuid,
+    )
 
     const player2GameStartedEvent = await player2Connection.waitForEventSchema(
       gameStartedMessageSchema,
     )
     expect(playersState.get(player2.uuid)?.status).toBe('playing')
-    expect(player2GameStartedEvent.data.currentParty).toStrictEqual(
-      player1GameStartedEvent.data.currentParty,
+    expect(player2GameStartedEvent.data.game).toStrictEqual(
+      player1GameStartedEvent.data.game,
     )
     // expect(player2GameStartedEvent.data.asset).toBe(undefined)
     // expect(player2GameStartedEvent.data.hand.length).toBe(8)
@@ -145,8 +148,8 @@ describe('WebSocket Server', () => {
       gameStartedMessageSchema,
     )
     expect(playersState.get(player3.uuid)?.status).toBe('playing')
-    expect(player3GameStartedEvent.data.currentParty).toStrictEqual(
-      player1GameStartedEvent.data.currentParty,
+    expect(player3GameStartedEvent.data.game).toStrictEqual(
+      player1GameStartedEvent.data.game,
     )
     // expect(player3GameStartedEvent.data.asset).toBe(undefined)
     // expect(player3GameStartedEvent.data.hand.length).toBe(8)
@@ -158,8 +161,8 @@ describe('WebSocket Server', () => {
       gameStartedMessageSchema,
     )
     expect(playersState.get(player4.uuid)?.status).toBe('playing')
-    expect(player4GameStartedEvent.data.currentParty).toStrictEqual(
-      player1GameStartedEvent.data.currentParty,
+    expect(player4GameStartedEvent.data.game).toStrictEqual(
+      player1GameStartedEvent.data.game,
     )
     // expect(player4GameStartedEvent.data.asset).toBe(undefined)
     // expect(player4GameStartedEvent.data.hand.length).toBe(8)

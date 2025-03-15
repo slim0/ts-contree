@@ -19,7 +19,7 @@ export const waitingForGameMessageSchema = Schema.Struct({
 
 export const gameStartedMessageSchema = Schema.Struct({
   _tag: Schema.tag("GameStartedMessage"),
-  data: gameSchema,
+  data: Schema.Struct({ game: gameSchema }),
 });
 
 const serverReponseMessageSchema = Schema.Union(
