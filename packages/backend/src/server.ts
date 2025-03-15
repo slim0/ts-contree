@@ -9,6 +9,7 @@ import {
   playerMessageSchema,
 } from 'shared/src/messages/player/playerMessages'
 import {
+  GameStartedMessage,
   PlayerConnectedMessage,
   UnparsablePlayerErrorMessage,
 } from 'shared/src/messages/server/serverMessages'
@@ -21,7 +22,7 @@ import {
   getStatePlayer,
   PlayerState,
 } from './core/database/players'
-import { ServerEvent, ServerResponse } from './core/events'
+import { InitializedGame, ServerResponse } from './core/events'
 import { searchForNewGame } from './core/game'
 
 export function createWebSocketServer(server: HTTPServer) {
@@ -41,36 +42,115 @@ const httpServer = app.listen(WS_PORT)
 
 createWebSocketServer(httpServer)
 
+function constructGameStartedMessageFromInitializedGame(
+  initializedGame: InitializedGame,
+): Effect.Effect<GameStartedMessage> {
+  return Effect.succeed({
+    _tag: 'GameStartedMessage' as const,
+    data: {
+      game: {
+        uuid: initializedGame.game.uuid,
+        status: initializedGame.game.row.status,
+        teamA: {
+          uuid: initializedGame.teamA.uuid,
+          name: initializedGame.teamA.row.name,
+          player1: {
+            uuid: initializedGame.teamA.row.player1_UUID,
+          },
+          player2: {
+            uuid: initializedGame.teamA.row.player2_UUID,
+          },
+          score: initializedGame.teamA.row.score,
+        },
+        teamB: {
+          uuid: initializedGame.teamB.uuid,
+          name: initializedGame.teamB.row.name,
+          player1: {
+            uuid: initializedGame.teamB.row.player1_UUID,
+          } as TeamPlayer,
+          player2: {
+            uuid: initializedGame.teamB.row.player2_UUID,
+          } as TeamPlayer,
+          score: initializedGame.teamB.row.score,
+        },
+        currentParty: {
+          uuid: initializedGame.party.uuid,
+          status: initializedGame.party.row.status,
+          asset: initializedGame.party.row.asset,
+          indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
+          folds: initializedGame.party.row.folds,
+        },
+      },
+    },
+  })
+}
+
 function treatPlayerMessage(
   connectedPlayerState: PlayerState,
   playerEvent: PlayerMessage,
-): Effect.Effect<ServerEvent> {
-  return Match.type<PlayerMessage>().pipe(
-    Match.tag('PingMessage', () =>
-      Effect.succeed({
-        _tag: 'PongEvent' as const,
-      }),
-    ),
-    Match.tag('PlayGameMessage', () =>
-      pipe(
-        searchForNewGame(connectedPlayerState),
-        Effect.map((maybeGameStartedEventData) =>
-          Option.match(maybeGameStartedEventData, {
-            onSome: (gameStartedEventData) => ({
-              _tag: 'GameStartedEvent' as const,
-              data: gameStartedEventData,
-            }),
-            onNone: () => {
-              return {
-                _tag: 'WaitingForGameEvent' as const,
-              }
+): Effect.Effect<ServerResponse> {
+  return pipe(
+    Match.type<PlayerMessage>().pipe(
+      Match.tag('PingMessage', () =>
+        Effect.succeed([
+          {
+            playerState: connectedPlayerState,
+            data: {
+              _tag: 'PongMessage' as const,
             },
-          }),
+          },
+        ]),
+      ),
+      Match.tag('PlayGameMessage', () =>
+        pipe(
+          searchForNewGame(connectedPlayerState),
+          Effect.andThen((maybeInitializedGame) =>
+            Option.match(maybeInitializedGame, {
+              onSome: (initializedGame) =>
+                pipe(
+                  Effect.succeed(
+                    getPlayers(
+                      initializedGame.teamA.row,
+                      initializedGame.teamB.row,
+                    ),
+                  ),
+                  Effect.andThen((playersUUID) =>
+                    Effect.forEach(playersUUID, (playerUUID) =>
+                      pipe(
+                        Effect.promise(() => getStatePlayer(playerUUID)),
+                        Effect.andThen((playerState) =>
+                          pipe(
+                            constructGameStartedMessageFromInitializedGame(
+                              initializedGame,
+                            ),
+                            Effect.andThen((gameStartedMessage) =>
+                              Effect.succeed({
+                                playerState,
+                                data: gameStartedMessage,
+                              }),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              onNone: () =>
+                Effect.succeed([
+                  {
+                    playerState: connectedPlayerState,
+                    data: {
+                      _tag: 'WaitingForGameMessage' as const,
+                    },
+                  },
+                ]),
+            }),
+          ),
         ),
       ),
-    ),
-    Match.exhaustive,
-  )(playerEvent)
+      Match.exhaustive,
+    )(playerEvent),
+  )
 }
 
 function parsePlayerMessage(
@@ -95,97 +175,6 @@ function processPlayerMessage(
     parsePlayerMessage(message),
     Effect.andThen((parsedMessage) =>
       treatPlayerMessage(connectedPlayerState, parsedMessage),
-    ),
-    Effect.andThen((response) =>
-      Match.type<ServerEvent>().pipe(
-        Match.tag('PongEvent', () =>
-          Effect.succeed([
-            {
-              playerState: connectedPlayerState,
-              data: {
-                _tag: 'PongMessage' as const,
-              },
-            },
-          ]),
-        ),
-        Match.tag('WaitingForGameEvent', () =>
-          Effect.succeed([
-            {
-              playerState: connectedPlayerState,
-              data: {
-                _tag: 'WaitingForGameMessage' as const,
-              },
-            },
-          ]),
-        ),
-        Match.tag('GameStartedEvent', (gameStartedEvent) =>
-          pipe(
-            Effect.succeed(
-              getPlayers(
-                gameStartedEvent.data.teamA.row,
-                gameStartedEvent.data.teamB.row,
-              ),
-            ),
-            Effect.andThen((playersUUID) =>
-              Effect.forEach(playersUUID, (playerUUID) =>
-                pipe(
-                  Effect.promise(() => getStatePlayer(playerUUID)),
-                  Effect.andThen((playerState) =>
-                    Effect.succeed({
-                      playerState,
-                      data: {
-                        _tag: 'GameStartedMessage' as const,
-                        data: {
-                          game: {
-                            uuid: gameStartedEvent.data.game.uuid,
-                            status: gameStartedEvent.data.game.row.status,
-                            teamA: {
-                              uuid: gameStartedEvent.data.teamA.uuid,
-                              name: gameStartedEvent.data.teamA.row.name,
-                              player1: {
-                                uuid: gameStartedEvent.data.teamA.row
-                                  .player1_UUID,
-                              },
-                              player2: {
-                                uuid: gameStartedEvent.data.teamA.row
-                                  .player2_UUID,
-                              },
-                              score: gameStartedEvent.data.teamA.row.score,
-                            },
-                            teamB: {
-                              uuid: gameStartedEvent.data.teamB.uuid,
-                              name: gameStartedEvent.data.teamB.row.name,
-                              player1: {
-                                uuid: gameStartedEvent.data.teamB.row
-                                  .player1_UUID,
-                              } as TeamPlayer,
-                              player2: {
-                                uuid: gameStartedEvent.data.teamB.row
-                                  .player2_UUID,
-                              } as TeamPlayer,
-                              score: gameStartedEvent.data.teamB.row.score,
-                            },
-                            currentParty: {
-                              uuid: gameStartedEvent.data.party.uuid,
-                              status: gameStartedEvent.data.party.row.status,
-                              asset: gameStartedEvent.data.party.row.asset,
-                              indexCurrentPlayer:
-                                gameStartedEvent.data.party.row
-                                  .indexCurrentPlayer,
-                              folds: gameStartedEvent.data.party.row.folds,
-                            },
-                          },
-                        },
-                      },
-                    }),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Match.exhaustive,
-      )(response),
     ),
   )
 }

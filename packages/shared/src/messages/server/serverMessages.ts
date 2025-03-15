@@ -22,6 +22,8 @@ export const gameStartedMessageSchema = Schema.Struct({
   data: Schema.Struct({ game: gameSchema }),
 });
 
+export type GameStartedMessage = typeof gameStartedMessageSchema.Type;
+
 const serverReponseMessageSchema = Schema.Union(
   pongMessageSchema,
   waitingForGameMessageSchema,
