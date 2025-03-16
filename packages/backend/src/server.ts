@@ -11,7 +11,9 @@ import {
 import {
   GameStartedMessage,
   PlayerConnectedMessage,
+  PongMessage,
   UnparsablePlayerErrorMessage,
+  WaitingForGameMessage,
 } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
@@ -87,7 +89,7 @@ function constructGameStartedMessageFromInitializedGame(
 
 function gameStartedResponsesFromInitializedGame(
   initializedGame: InitializedGame,
-): Effect.Effect<{ playerState: PlayerState; data: GameStartedMessage }[]> {
+): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
   return pipe(
     Effect.succeed(
       getPlayers(initializedGame.teamA.row, initializedGame.teamB.row),
@@ -116,7 +118,11 @@ function gameStartedResponsesFromInitializedGame(
 function treatPlayerMessage(
   connectedPlayerState: PlayerState,
   playerEvent: PlayerMessage,
-): Effect.Effect<ServerResponse> {
+): Effect.Effect<
+  | Array<ServerResponse<PongMessage>>
+  | Array<ServerResponse<WaitingForGameMessage>>
+  | Array<ServerResponse<GameStartedMessage>>
+> {
   return pipe(
     Match.type<PlayerMessage>().pipe(
       Match.tag('PingMessage', () =>
@@ -171,7 +177,12 @@ function parsePlayerMessage(
 function processPlayerMessage(
   message: RawData,
   connectedPlayerState: PlayerState,
-): Effect.Effect<ServerResponse, UnparsablePlayerErrorMessage> {
+): Effect.Effect<
+  | Array<ServerResponse<PongMessage>>
+  | Array<ServerResponse<WaitingForGameMessage>>
+  | Array<ServerResponse<GameStartedMessage>>,
+  UnparsablePlayerErrorMessage
+> {
   return pipe(
     parsePlayerMessage(message),
     Effect.andThen((parsedMessage) =>

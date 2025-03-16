@@ -12,7 +12,7 @@ export type InitializedGame = {
   players: PlayerState[]
 }
 
-export type ServerResponse = Array<{
+export type ServerResponse<M extends ServerMessage> = {
   playerState: PlayerState
-  data: ServerMessage
-}>
+  data: M
+}
