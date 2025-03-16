@@ -19,7 +19,9 @@ export const waitingForGameMessageSchema = Schema.Struct({
 
 export const gameStartedMessageSchema = Schema.Struct({
   _tag: Schema.tag("GameStartedMessage"),
-  data: Schema.Struct({ game: gameSchema }),
+  data: Schema.Struct({
+    game: gameSchema,
+  }),
 });
 
 export type GameStartedMessage = typeof gameStartedMessageSchema.Type;

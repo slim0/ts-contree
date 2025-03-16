@@ -2,6 +2,7 @@ import { Schema as S } from '@effect/schema'
 import { Effect, Match, Option, pipe } from 'effect'
 import express from 'express'
 import { Server as HTTPServer } from 'http'
+import { Game } from 'shared/src/messages/datas/game'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
 import { TeamPlayer } from 'shared/src/messages/datas/team'
 import {
@@ -44,45 +45,40 @@ const httpServer = app.listen(WS_PORT)
 
 createWebSocketServer(httpServer)
 
-function constructGameStartedMessageFromInitializedGame(
+function constructGameFromInitializedGame(
   initializedGame: InitializedGame,
-): Effect.Effect<GameStartedMessage> {
+): Effect.Effect<Game> {
   return Effect.succeed({
-    _tag: 'GameStartedMessage' as const,
-    data: {
-      game: {
-        uuid: initializedGame.game.uuid,
-        status: initializedGame.game.row.status,
-        teamA: {
-          uuid: initializedGame.teamA.uuid,
-          name: initializedGame.teamA.row.name,
-          player1: {
-            uuid: initializedGame.teamA.row.player1_UUID,
-          },
-          player2: {
-            uuid: initializedGame.teamA.row.player2_UUID,
-          },
-          score: initializedGame.teamA.row.score,
-        },
-        teamB: {
-          uuid: initializedGame.teamB.uuid,
-          name: initializedGame.teamB.row.name,
-          player1: {
-            uuid: initializedGame.teamB.row.player1_UUID,
-          } as TeamPlayer,
-          player2: {
-            uuid: initializedGame.teamB.row.player2_UUID,
-          } as TeamPlayer,
-          score: initializedGame.teamB.row.score,
-        },
-        currentParty: {
-          uuid: initializedGame.party.uuid,
-          status: initializedGame.party.row.status,
-          asset: initializedGame.party.row.asset,
-          indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
-          folds: initializedGame.party.row.folds,
-        },
+    uuid: initializedGame.game.uuid,
+    status: initializedGame.game.row.status,
+    teamA: {
+      uuid: initializedGame.teamA.uuid,
+      name: initializedGame.teamA.row.name,
+      player1: {
+        uuid: initializedGame.teamA.row.player1_UUID,
       },
+      player2: {
+        uuid: initializedGame.teamA.row.player2_UUID,
+      },
+      score: initializedGame.teamA.row.score,
+    },
+    teamB: {
+      uuid: initializedGame.teamB.uuid,
+      name: initializedGame.teamB.row.name,
+      player1: {
+        uuid: initializedGame.teamB.row.player1_UUID,
+      } as TeamPlayer,
+      player2: {
+        uuid: initializedGame.teamB.row.player2_UUID,
+      } as TeamPlayer,
+      score: initializedGame.teamB.row.score,
+    },
+    currentParty: {
+      uuid: initializedGame.party.uuid,
+      status: initializedGame.party.row.status,
+      asset: initializedGame.party.row.asset,
+      indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
+      folds: initializedGame.party.row.folds,
     },
   })
 }
@@ -91,23 +87,27 @@ function gameStartedResponsesFromInitializedGame(
   initializedGame: InitializedGame,
 ): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
   return pipe(
-    Effect.succeed(
-      getPlayers(initializedGame.teamA.row, initializedGame.teamB.row),
+    Effect.Do,
+    Effect.bind('game', () =>
+      constructGameFromInitializedGame(initializedGame),
     ),
-    Effect.andThen((playersUUID) =>
+    Effect.bind('playersUUID', () =>
+      Effect.succeed(
+        getPlayers(initializedGame.teamA.row, initializedGame.teamB.row),
+      ),
+    ),
+    Effect.andThen(({ playersUUID, game }) =>
       Effect.forEach(playersUUID, (playerUUID) =>
         pipe(
           Effect.promise(() => getStatePlayer(playerUUID)),
           Effect.andThen((playerState) =>
-            pipe(
-              constructGameStartedMessageFromInitializedGame(initializedGame),
-              Effect.andThen((gameStartedMessage) =>
-                Effect.succeed({
-                  playerState,
-                  data: gameStartedMessage,
-                }),
-              ),
-            ),
+            Effect.succeed({
+              playerState,
+              data: {
+                _tag: 'GameStartedMessage' as const,
+                data: { game },
+              },
+            } as ServerResponse<GameStartedMessage>),
           ),
         ),
       ),
