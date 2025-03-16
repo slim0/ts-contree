@@ -18,11 +18,9 @@ import {
 } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
-import { getPlayers } from './core/database/parties'
 import {
   addConnectedPlayer,
   deletePlayerFromState,
-  getStatePlayer,
   PlayerState,
 } from './core/database/players'
 import { InitializedGame, ServerResponse } from './core/events'
@@ -87,29 +85,18 @@ function gameStartedResponsesFromInitializedGame(
   initializedGame: InitializedGame,
 ): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
   return pipe(
-    Effect.Do,
-    Effect.bind('game', () =>
-      constructGameFromInitializedGame(initializedGame),
-    ),
-    Effect.bind('playersUUID', () =>
-      Effect.succeed(
-        getPlayers(initializedGame.teamA.row, initializedGame.teamB.row),
-      ),
-    ),
-    Effect.andThen(({ playersUUID, game }) =>
-      Effect.forEach(playersUUID, (playerUUID) =>
-        pipe(
-          Effect.promise(() => getStatePlayer(playerUUID)),
-          Effect.andThen((playerState) =>
-            Effect.succeed({
-              playerState,
-              data: {
-                _tag: 'GameStartedMessage' as const,
-                data: { game },
-              },
-            } as ServerResponse<GameStartedMessage>),
-          ),
-        ),
+    constructGameFromInitializedGame(initializedGame),
+    Effect.andThen((game) =>
+      Effect.forEach(initializedGame.players, (playerState) =>
+        Effect.succeed({
+          playerState,
+          data: {
+            _tag: 'GameStartedMessage' as const,
+            data: {
+              game,
+            },
+          },
+        }),
       ),
     ),
   )
