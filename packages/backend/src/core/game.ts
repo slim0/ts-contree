@@ -2,7 +2,6 @@ import { Effect, Match, Option, pipe } from 'effect'
 import { createGame } from './database/games'
 import { createParty } from './database/parties'
 import {
-  getStatePlayer,
   PlayerState,
   retrieveWaitingPlayers,
   setPlayerStatus,
@@ -28,15 +27,10 @@ function searchAvailablePlayers(
         Match.orElse((players) =>
           pipe(
             Effect.promise(() =>
-              getStatePlayer(connectedPlayerState.uuid, false),
+              setPlayerStatus(connectedPlayerState.uuid, 'playing'),
             ),
-            Effect.tap(() =>
-              Effect.promise(() =>
-                setPlayerStatus(connectedPlayerState.uuid, 'playing'),
-              ),
-            ),
-            Effect.andThen((statePlayer) =>
-              Effect.succeed(Option.some([...players, statePlayer!])),
+            Effect.andThen(() =>
+              Effect.succeed(Option.some([...players, connectedPlayerState!])),
             ),
           ),
         ),
