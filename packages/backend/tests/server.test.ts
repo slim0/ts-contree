@@ -37,14 +37,14 @@ describe('WebSocket Server', () => {
     const player = new TestWebSocket('player', url)
 
     await player.waitUntil('open')
-    await player.waitForEventSchema(playerConnectedMessageSchema)
+    await player.waitForMessageSchema(playerConnectedMessageSchema)
 
     const pingMessage: PingMessage = {
       _tag: 'PingMessage',
     }
 
     player.send(JSON.stringify(pingMessage))
-    await player.waitForEventSchema(pongMessageSchema)
+    await player.waitForMessageSchema(pongMessageSchema)
 
     player.close()
   })
@@ -58,30 +58,26 @@ describe('WebSocket Server', () => {
     // Test players connection
 
     await player1Connection.waitUntil('open')
-    const player1ConnectedMessage = await player1Connection.waitForEventSchema(
-      playerConnectedMessageSchema,
-    )
+    const player1ConnectedMessage =
+      await player1Connection.waitForMessageSchema(playerConnectedMessageSchema)
     const player1 = player1ConnectedMessage.data
     expect(playersState.get(player1.uuid)?.status).toBe('connected')
 
     await player2Connection.waitUntil('open')
-    const player2ConnectedMessage = await player2Connection.waitForEventSchema(
-      playerConnectedMessageSchema,
-    )
+    const player2ConnectedMessage =
+      await player2Connection.waitForMessageSchema(playerConnectedMessageSchema)
     const player2 = player2ConnectedMessage.data
     expect(playersState.get(player2.uuid)?.status).toBe('connected')
 
     await player3Connection.waitUntil('open')
-    const player3ConnectedMessage = await player3Connection.waitForEventSchema(
-      playerConnectedMessageSchema,
-    )
+    const player3ConnectedMessage =
+      await player3Connection.waitForMessageSchema(playerConnectedMessageSchema)
     const player3 = player3ConnectedMessage.data
     expect(playersState.get(player3.uuid)?.status).toBe('connected')
 
     await player4Connection.waitUntil('open')
-    const player4ConnectedMessage = await player4Connection.waitForEventSchema(
-      playerConnectedMessageSchema,
-    )
+    const player4ConnectedMessage =
+      await player4Connection.waitForMessageSchema(playerConnectedMessageSchema)
     const player4 = player4ConnectedMessage.data
     expect(playersState.get(player4.uuid)?.status).toBe('connected')
 
@@ -94,86 +90,86 @@ describe('WebSocket Server', () => {
     }
 
     player1Connection.send(JSON.stringify(playGameMessage))
-    await player1Connection.waitForEventSchema(waitingForGameMessageSchema)
+    await player1Connection.waitForMessageSchema(waitingForGameMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('waitingForGame')
 
     player2Connection.send(JSON.stringify(playGameMessage))
-    await player2Connection.waitForEventSchema(waitingForGameMessageSchema)
+    await player2Connection.waitForMessageSchema(waitingForGameMessageSchema)
     expect(playersState.get(player2.uuid)?.status).toBe('waitingForGame')
 
     player3Connection.send(JSON.stringify(playGameMessage))
-    await player3Connection.waitForEventSchema(waitingForGameMessageSchema)
+    await player3Connection.waitForMessageSchema(waitingForGameMessageSchema)
     expect(playersState.get(player3.uuid)?.status).toBe('waitingForGame')
 
     player4Connection.send(JSON.stringify(playGameMessage))
 
     // Test started game
 
-    const player1GameStartedEvent = await player1Connection.waitForEventSchema(
-      gameStartedMessageSchema,
-    )
+    const player1GameStartedMessage =
+      await player1Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    expect(player1GameStartedEvent.data.game.currentParty.asset).toBe(null)
-    expect(player1GameStartedEvent.data.game.currentParty.folds.length).toBe(0)
+    expect(player1GameStartedMessage.data.game.currentParty.asset).toBe(null)
+    expect(player1GameStartedMessage.data.game.currentParty.folds.length).toBe(
+      0,
+    )
     expect(
-      player1GameStartedEvent.data.game.currentParty.indexCurrentPlayer,
+      player1GameStartedMessage.data.game.currentParty.indexCurrentPlayer,
     ).toBe(0)
-    expect(player1GameStartedEvent.data.game.currentParty.status).toBe('start')
+    expect(player1GameStartedMessage.data.game.currentParty.status).toBe(
+      'start',
+    )
 
-    expect(player1GameStartedEvent.data.game.status).toBe('start')
+    expect(player1GameStartedMessage.data.game.status).toBe('start')
 
-    expect(player1GameStartedEvent.data.game.teamA.score).toBe(0)
-    expect(player1GameStartedEvent.data.game.teamA.name).toBe('Red Devil')
-    expect(player1GameStartedEvent.data.game.teamA.player1.uuid).toBe(
+    expect(player1GameStartedMessage.data.game.teamA.score).toBe(0)
+    expect(player1GameStartedMessage.data.game.teamA.name).toBe('Red Devil')
+    expect(player1GameStartedMessage.data.game.teamA.player1.uuid).toBe(
       player1.uuid,
     )
-    expect(player1GameStartedEvent.data.game.teamA.player2.uuid).toBe(
+    expect(player1GameStartedMessage.data.game.teamA.player2.uuid).toBe(
       player2.uuid,
     )
 
-    expect(player1GameStartedEvent.data.game.teamB.score).toBe(0)
-    expect(player1GameStartedEvent.data.game.teamB.name).toBe('Black Mamba')
-    expect(player1GameStartedEvent.data.game.teamB.player1.uuid).toBe(
+    expect(player1GameStartedMessage.data.game.teamB.score).toBe(0)
+    expect(player1GameStartedMessage.data.game.teamB.name).toBe('Black Mamba')
+    expect(player1GameStartedMessage.data.game.teamB.player1.uuid).toBe(
       player3.uuid,
     )
-    expect(player1GameStartedEvent.data.game.teamB.player2.uuid).toBe(
+    expect(player1GameStartedMessage.data.game.teamB.player2.uuid).toBe(
       player4.uuid,
     )
-    expect(player1GameStartedEvent.data.hand.length).toBe(8)
+    expect(player1GameStartedMessage.data.hand.length).toBe(8)
 
-    const player2GameStartedEvent = await player2Connection.waitForEventSchema(
-      gameStartedMessageSchema,
-    )
+    const player2GameStartedMessage =
+      await player2Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player2.uuid)?.status).toBe('playing')
-    expect(player2GameStartedEvent.data.game).toStrictEqual(
-      player1GameStartedEvent.data.game,
+    expect(player2GameStartedMessage.data.game).toStrictEqual(
+      player1GameStartedMessage.data.game,
     )
-    expect(player2GameStartedEvent.data.hand.length).toBe(8)
+    expect(player2GameStartedMessage.data.hand.length).toBe(8)
 
-    const player3GameStartedEvent = await player3Connection.waitForEventSchema(
-      gameStartedMessageSchema,
-    )
+    const player3GameStartedMessage =
+      await player3Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player3.uuid)?.status).toBe('playing')
-    expect(player3GameStartedEvent.data.game).toStrictEqual(
-      player1GameStartedEvent.data.game,
+    expect(player3GameStartedMessage.data.game).toStrictEqual(
+      player1GameStartedMessage.data.game,
     )
-    expect(player3GameStartedEvent.data.hand.length).toBe(8)
+    expect(player3GameStartedMessage.data.hand.length).toBe(8)
 
-    const player4GameStartedEvent = await player4Connection.waitForEventSchema(
-      gameStartedMessageSchema,
-    )
+    const player4GameStartedMessage =
+      await player4Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player4.uuid)?.status).toBe('playing')
-    expect(player4GameStartedEvent.data.game).toStrictEqual(
-      player1GameStartedEvent.data.game,
+    expect(player4GameStartedMessage.data.game).toStrictEqual(
+      player1GameStartedMessage.data.game,
     )
-    expect(player4GameStartedEvent.data.hand.length).toBe(8)
+    expect(player4GameStartedMessage.data.hand.length).toBe(8)
 
     // Test all cards are being distributed among players
     const distributedCardsStrings = new Set(
-      player1GameStartedEvent.data.hand
-        .concat(player2GameStartedEvent.data.hand)
-        .concat(player3GameStartedEvent.data.hand)
-        .concat(player4GameStartedEvent.data.hand)
+      player1GameStartedMessage.data.hand
+        .concat(player2GameStartedMessage.data.hand)
+        .concat(player3GameStartedMessage.data.hand)
+        .concat(player4GameStartedMessage.data.hand)
         .map((card) => uniqueNameFromCard(card)),
     )
     expect(
@@ -192,12 +188,12 @@ describe('WebSocket Server', () => {
     const player = new TestWebSocket('player', url)
     await player.waitUntil('open')
 
-    const wrongEvent = {
-      _tag: 'WrongMessageEvent',
+    const wrongMessage = {
+      _tag: 'WrongMessage',
     }
 
-    player.send(JSON.stringify(wrongEvent))
-    await player.waitForEventSchema(unparsablePlayerErrorMessageSchema)
+    player.send(JSON.stringify(wrongMessage))
+    await player.waitForMessageSchema(unparsablePlayerErrorMessageSchema)
 
     player.close()
   })
