@@ -2,6 +2,7 @@ import { Schema as S } from '@effect/schema'
 import { Effect, Match, Option, pipe } from 'effect'
 import express from 'express'
 import { Server as HTTPServer } from 'http'
+import { Card, deckOf32Cards } from 'shared/src/messages/datas/cards'
 import { Game } from 'shared/src/messages/datas/game'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
 import { TeamPlayer } from 'shared/src/messages/datas/team'
@@ -18,6 +19,7 @@ import {
 } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
 import { RawData, WebSocket, WebSocketServer } from 'ws'
+import { shuffleArray } from './core/cards'
 import {
   addConnectedPlayer,
   deletePlayerFromState,
@@ -81,22 +83,46 @@ function constructGameFromInitializedGame(
   })
 }
 
+function shuffleDeck(deck: Card[]): Effect.Effect<Card[]> {
+  return Effect.succeed(shuffleArray(deck))
+}
+
+function distributeCards(deck: Card[]): Effect.Effect<Card[][]> {
+  return pipe(
+    shuffleDeck(deck),
+    Effect.andThen((shuffledDeck) =>
+      Effect.succeed([
+        shuffledDeck.slice(0, 8),
+        shuffledDeck.slice(8, 16),
+        shuffledDeck.slice(16, 24),
+        shuffledDeck.slice(24, 32),
+      ]),
+    ),
+  )
+}
+
 function gameStartedResponsesFromInitializedGame(
   initializedGame: InitializedGame,
 ): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
   return pipe(
     constructGameFromInitializedGame(initializedGame),
     Effect.andThen((game) =>
-      Effect.forEach(initializedGame.players, (playerState) =>
-        Effect.succeed({
-          playerState,
-          data: {
-            _tag: 'GameStartedMessage' as const,
-            data: {
-              game,
-            },
-          },
-        }),
+      pipe(
+        distributeCards(deckOf32Cards),
+        Effect.andThen((distributedCards) =>
+          Effect.forEach(initializedGame.players, (playerState, index) =>
+            Effect.succeed({
+              playerState,
+              data: {
+                _tag: 'GameStartedMessage' as const,
+                data: {
+                  game,
+                  hand: distributedCards[index],
+                },
+              },
+            }),
+          ),
+        ),
       ),
     ),
   )

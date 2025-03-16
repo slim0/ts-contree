@@ -216,6 +216,6 @@ export const deckOf32Cards = [
   kingOfDiamonds,
 ];
 
-export function stringifyCard(card: Card): string {
+export function uniqueNameFromCard(card: Card): string {
   return `${card.name} of ${card.color}`;
 }

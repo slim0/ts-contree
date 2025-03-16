@@ -1,5 +1,6 @@
 import { Schema } from "@effect/schema";
 import { gameSchema } from "../datas/game";
+import { handSchema } from "../datas/hand";
 import { playerSchema } from "../datas/player";
 
 // Success
@@ -21,6 +22,7 @@ export const gameStartedMessageSchema = Schema.Struct({
   _tag: Schema.tag("GameStartedMessage"),
   data: Schema.Struct({
     game: gameSchema,
+    hand: handSchema,
   }),
 });
 

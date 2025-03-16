@@ -1,6 +1,10 @@
 import { Server } from 'node:http'
 
 import {
+  deckOf32Cards,
+  uniqueNameFromCard,
+} from 'shared/src/messages/datas/cards'
+import {
   PingMessage,
   PlayGameMessage,
 } from 'shared/src/messages/player/playerMessages'
@@ -51,6 +55,8 @@ describe('WebSocket Server', () => {
     const player3Connection = new TestWebSocket('player3', url)
     const player4Connection = new TestWebSocket('player4', url)
 
+    // Test players connection
+
     await player1Connection.waitUntil('open')
     const player1ConnectedMessage = await player1Connection.waitForEventSchema(
       playerConnectedMessageSchema,
@@ -81,6 +87,8 @@ describe('WebSocket Server', () => {
 
     expect(playersState.size).toBe(4)
 
+    // Test players want to play a game
+
     const playGameMessage: PlayGameMessage = {
       _tag: 'PlayGameMessage',
     }
@@ -99,9 +107,10 @@ describe('WebSocket Server', () => {
 
     player4Connection.send(JSON.stringify(playGameMessage))
 
+    // Test started game
+
     const player1GameStartedEvent = await player1Connection.waitForEventSchema(
       gameStartedMessageSchema,
-      true,
     )
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
     expect(player1GameStartedEvent.data.game.currentParty.asset).toBe(null)
@@ -130,6 +139,7 @@ describe('WebSocket Server', () => {
     expect(player1GameStartedEvent.data.game.teamB.player2.uuid).toBe(
       player4.uuid,
     )
+    expect(player1GameStartedEvent.data.hand.length).toBe(8)
 
     const player2GameStartedEvent = await player2Connection.waitForEventSchema(
       gameStartedMessageSchema,
@@ -138,11 +148,7 @@ describe('WebSocket Server', () => {
     expect(player2GameStartedEvent.data.game).toStrictEqual(
       player1GameStartedEvent.data.game,
     )
-    // expect(player2GameStartedEvent.data.asset).toBe(undefined)
-    // expect(player2GameStartedEvent.data.hand.length).toBe(8)
-    // expect(player2GameStartedEvent.data.game).toStrictEqual(
-    //   player1GameStartedEvent.data.game,
-    // )
+    expect(player2GameStartedEvent.data.hand.length).toBe(8)
 
     const player3GameStartedEvent = await player3Connection.waitForEventSchema(
       gameStartedMessageSchema,
@@ -151,11 +157,7 @@ describe('WebSocket Server', () => {
     expect(player3GameStartedEvent.data.game).toStrictEqual(
       player1GameStartedEvent.data.game,
     )
-    // expect(player3GameStartedEvent.data.asset).toBe(undefined)
-    // expect(player3GameStartedEvent.data.hand.length).toBe(8)
-    // expect(player3GameStartedEvent.data.game).toStrictEqual(
-    //   player1GameStartedEvent.data.game,
-    // )
+    expect(player3GameStartedEvent.data.hand.length).toBe(8)
 
     const player4GameStartedEvent = await player4Connection.waitForEventSchema(
       gameStartedMessageSchema,
@@ -164,30 +166,22 @@ describe('WebSocket Server', () => {
     expect(player4GameStartedEvent.data.game).toStrictEqual(
       player1GameStartedEvent.data.game,
     )
-    // expect(player4GameStartedEvent.data.asset).toBe(undefined)
-    // expect(player4GameStartedEvent.data.hand.length).toBe(8)
-    // expect(player4GameStartedEvent.data.game).toStrictEqual(
-    //   player1GameStartedEvent.data.game,
-    // )
+    expect(player4GameStartedEvent.data.hand.length).toBe(8)
 
-    // const distributedCardsStrings = new Set(
-    //   player1GameStartedEvent.data.hand
-    //     .concat(player2GameStartedEvent.data.hand)
-    //     .concat(player3GameStartedEvent.data.hand)
-    //     .concat(player4GameStartedEvent.data.hand)
-    //     .map((card) => stringifyCard(card)),
-    // )
+    // Test all cards are being distributed among players
+    const distributedCardsStrings = new Set(
+      player1GameStartedEvent.data.hand
+        .concat(player2GameStartedEvent.data.hand)
+        .concat(player3GameStartedEvent.data.hand)
+        .concat(player4GameStartedEvent.data.hand)
+        .map((card) => uniqueNameFromCard(card)),
+    )
+    expect(
+      distributedCardsStrings.size,
+      'Some players have at least one card in common',
+    ).toBe(deckOf32Cards.length)
 
-    // const deckOf32CardsStrings = new Set(
-    //   deckOf32Cards.map((card) => stringifyCard(card)),
-    // )
-    // const intersection = new Set(
-    //   [...distributedCardsStrings].filter((x) => deckOf32CardsStrings.has(x)),
-    // )
-
-    // expect(distributedCardsStrings.size).toBe(deckOf32Cards.length)
-    // expect(intersection.size).toBe(deckOf32Cards.length)
-
+    // Close connections
     player1Connection.close()
     player2Connection.close()
     player3Connection.close()
