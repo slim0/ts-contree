@@ -86,8 +86,8 @@ export class TestWebSocket extends WebSocket {
 
   waitForMessageSchema<A, I>(
     messageSchema: Schema.Schema<A, I, never>,
-    debug?: boolean,
     includeExistingMessages: boolean = true,
+    debug?: boolean,
     timeout: number = 1000,
   ): A | Promise<A> {
     const alreadyMatchingMessage =

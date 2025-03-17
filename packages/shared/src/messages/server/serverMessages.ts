@@ -46,11 +46,20 @@ export const unparsablePlayerErrorMessageSchema = Schema.Struct({
   message: Schema.String,
 });
 
+export const playerStatusErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("PlayerAlreadyPlayingErrorMessage"),
+  message: Schema.String,
+});
+
 export type UnparsablePlayerErrorMessage =
   typeof unparsablePlayerErrorMessageSchema.Type;
 
+export type PlayerStatusErrorMessage =
+  typeof playerStatusErrorMessageSchema.Type;
+
 export const serverErrorMessageSchema = Schema.Union(
   unparsablePlayerErrorMessageSchema,
+  playerStatusErrorMessageSchema,
 );
 
 export type ServerErrorMessage = typeof serverErrorMessageSchema.Type;

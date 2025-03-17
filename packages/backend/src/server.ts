@@ -8,6 +8,7 @@ import { WebSocket, WebSocketServer } from 'ws'
 import {
   addConnectedPlayer,
   deletePlayerFromState,
+  getStatePlayer,
   PlayerState,
 } from './core/database/players'
 import { processPlayerMessage } from './core/player'
@@ -53,7 +54,15 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
   webSocketClientConnection.on('message', (message) => {
     Effect.runPromiseExit(
       pipe(
-        processPlayerMessage(message, connectedPlayerState),
+        Effect.Do,
+        Effect.bind('refreshedPlayerState', () =>
+          Effect.promise(() =>
+            getStatePlayer(connectedPlayerState.uuid, false),
+          ),
+        ),
+        Effect.andThen(({ refreshedPlayerState }) =>
+          processPlayerMessage(message, refreshedPlayerState),
+        ),
         Effect.andThen((serverResponse) =>
           serverResponse.map(({ playerState, data }) =>
             playerState.row.connection.send(JSON.stringify(data)),

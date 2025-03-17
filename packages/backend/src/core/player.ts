@@ -6,6 +6,7 @@ import {
 } from 'shared/src/messages/player/playerMessages'
 import {
   GameStartedMessage,
+  PlayerStatusErrorMessage,
   PongMessage,
   UnparsablePlayerErrorMessage,
   WaitingForGameMessage,
@@ -18,13 +19,28 @@ import {
 } from './game'
 import { ServerResponse } from './types'
 
+function verifyPlayerStatus(
+  player: PlayerState,
+): Effect.Effect<void, PlayerStatusErrorMessage> {
+  return Match.value(player.row.status).pipe(
+    Match.when('connected', () => Effect.void),
+    Match.whenOr('waitingForGame', 'playing', (status) =>
+      Effect.fail({
+        _tag: 'PlayerAlreadyPlayingErrorMessage' as const,
+        message: `Player with uuid=${player.uuid} is already in status '${status}'`,
+      }),
+    ),
+    Match.exhaustive,
+  )
+}
 function treatPlayerMessage(
   connectedPlayerState: PlayerState,
   playerEvent: PlayerMessage,
 ): Effect.Effect<
   | Array<ServerResponse<PongMessage>>
   | Array<ServerResponse<WaitingForGameMessage>>
-  | Array<ServerResponse<GameStartedMessage>>
+  | Array<ServerResponse<GameStartedMessage>>,
+  PlayerStatusErrorMessage
 > {
   return pipe(
     Match.type<PlayerMessage>().pipe(
@@ -40,7 +56,8 @@ function treatPlayerMessage(
       ),
       Match.tag('PlayGameMessage', () =>
         pipe(
-          searchForNewGame(connectedPlayerState),
+          verifyPlayerStatus(connectedPlayerState),
+          Effect.andThen(() => searchForNewGame(connectedPlayerState)),
           Effect.andThen((maybeInitializedGame) =>
             Option.match(maybeInitializedGame, {
               onSome: (initializedGame) =>
@@ -86,7 +103,7 @@ export function processPlayerMessage(
   | Array<ServerResponse<PongMessage>>
   | Array<ServerResponse<WaitingForGameMessage>>
   | Array<ServerResponse<GameStartedMessage>>,
-  UnparsablePlayerErrorMessage
+  UnparsablePlayerErrorMessage | PlayerStatusErrorMessage
 > {
   return pipe(
     parsePlayerMessage(message),

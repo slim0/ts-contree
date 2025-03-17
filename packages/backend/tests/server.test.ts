@@ -11,6 +11,7 @@ import {
 import {
   gameStartedMessageSchema,
   playerConnectedMessageSchema,
+  playerStatusErrorMessageSchema,
   pongMessageSchema,
   unparsablePlayerErrorMessageSchema,
   waitingForGameMessageSchema,
@@ -91,6 +92,10 @@ describe('WebSocket Server', () => {
 
     player1Connection.send(JSON.stringify(playGameMessage))
     await player1Connection.waitForMessageSchema(waitingForGameMessageSchema)
+    expect(playersState.get(player1.uuid)?.status).toBe('waitingForGame')
+
+    player1Connection.send(JSON.stringify(playGameMessage))
+    await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('waitingForGame')
 
     player2Connection.send(JSON.stringify(playGameMessage))
@@ -176,6 +181,10 @@ describe('WebSocket Server', () => {
       distributedCardsStrings.size,
       'Some players have at least one card in common',
     ).toBe(deckOf32Cards.length)
+
+    player1Connection.send(JSON.stringify(playGameMessage))
+    await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
+    expect(playersState.get(player1.uuid)?.status).toBe('playing')
 
     // Close connections
     player1Connection.close()
