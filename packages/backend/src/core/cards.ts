@@ -1,4 +1,5 @@
 import { exhaustiveCheck } from 'backend/src/typescript-tools'
+import { Effect, pipe } from 'effect'
 import { Card, CardName } from 'shared/src/messages/datas/cards'
 import { Color } from 'shared/src/messages/datas/color'
 
@@ -109,4 +110,22 @@ export function shuffleArray<A>(array: A[]): A[] {
     array[j] = temp
   }
   return array
+}
+
+function shuffleDeck(deck: Card[]): Effect.Effect<Card[]> {
+  return Effect.succeed(shuffleArray(deck))
+}
+
+export function distributeCards(deck: Card[]): Effect.Effect<Card[][]> {
+  return pipe(
+    shuffleDeck(deck),
+    Effect.andThen((shuffledDeck) =>
+      Effect.succeed([
+        shuffledDeck.slice(0, 8),
+        shuffledDeck.slice(8, 16),
+        shuffledDeck.slice(16, 24),
+        shuffledDeck.slice(24, 32),
+      ]),
+    ),
+  )
 }

@@ -1,4 +1,9 @@
 import { Effect, Match, Option, pipe } from 'effect'
+import { deckOf32Cards } from 'shared/src/messages/datas/cards'
+import { Game } from 'shared/src/messages/datas/game'
+import { TeamPlayer } from 'shared/src/messages/datas/team'
+import { GameStartedMessage } from 'shared/src/messages/server/serverMessages'
+import { distributeCards } from './cards'
 import { createGame } from './database/games'
 import { createParty } from './database/parties'
 import {
@@ -7,7 +12,7 @@ import {
   setPlayerStatus,
 } from './database/players'
 import { createTeam } from './database/teams'
-import { InitializedGame } from './events'
+import { InitializedGame, ServerResponse } from './types'
 
 function searchAvailablePlayers(
   connectedPlayerState: PlayerState,
@@ -39,7 +44,9 @@ function searchAvailablePlayers(
   )
 }
 
-function initGame(players: PlayerState[]): Effect.Effect<InitializedGame> {
+function initializeGame(
+  players: PlayerState[],
+): Effect.Effect<InitializedGame> {
   return pipe(
     Effect.Do,
     Effect.bind('teamA', () =>
@@ -77,13 +84,76 @@ export function searchForNewGame(
       Option.match(maybePlayers, {
         onSome: (players) =>
           pipe(
-            initGame(players),
+            initializeGame(players),
             Effect.andThen((initializedGame) =>
               Effect.succeed(Option.some(initializedGame)),
             ),
           ),
         onNone: () => Effect.succeed(Option.none()),
       }),
+    ),
+  )
+}
+export function constructGameFromInitializedGame(
+  initializedGame: InitializedGame,
+): Effect.Effect<Game> {
+  return Effect.succeed({
+    uuid: initializedGame.game.uuid,
+    status: initializedGame.game.row.status,
+    teamA: {
+      uuid: initializedGame.teamA.uuid,
+      name: initializedGame.teamA.row.name,
+      player1: {
+        uuid: initializedGame.teamA.row.player1_UUID,
+      },
+      player2: {
+        uuid: initializedGame.teamA.row.player2_UUID,
+      },
+      score: initializedGame.teamA.row.score,
+    },
+    teamB: {
+      uuid: initializedGame.teamB.uuid,
+      name: initializedGame.teamB.row.name,
+      player1: {
+        uuid: initializedGame.teamB.row.player1_UUID,
+      } as TeamPlayer,
+      player2: {
+        uuid: initializedGame.teamB.row.player2_UUID,
+      } as TeamPlayer,
+      score: initializedGame.teamB.row.score,
+    },
+    currentParty: {
+      uuid: initializedGame.party.uuid,
+      status: initializedGame.party.row.status,
+      asset: initializedGame.party.row.asset,
+      indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
+      folds: initializedGame.party.row.folds,
+    },
+  })
+}
+export function gameStartedResponsesFromInitializedGame(
+  initializedGame: InitializedGame,
+): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
+  return pipe(
+    constructGameFromInitializedGame(initializedGame),
+    Effect.andThen((game) =>
+      pipe(
+        distributeCards(deckOf32Cards),
+        Effect.andThen((distributedCards) =>
+          Effect.forEach(initializedGame.players, (playerState, index) =>
+            Effect.succeed({
+              playerState,
+              data: {
+                _tag: 'GameStartedMessage' as const,
+                data: {
+                  game,
+                  hand: distributedCards[index],
+                },
+              },
+            }),
+          ),
+        ),
+      ),
     ),
   )
 }

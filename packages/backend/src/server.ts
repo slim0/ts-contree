@@ -1,32 +1,16 @@
-import { Schema as S } from '@effect/schema'
-import { Effect, Match, Option, pipe } from 'effect'
+import { Effect, pipe } from 'effect'
 import express from 'express'
 import { Server as HTTPServer } from 'http'
-import { Card, deckOf32Cards } from 'shared/src/messages/datas/cards'
-import { Game } from 'shared/src/messages/datas/game'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
-import { TeamPlayer } from 'shared/src/messages/datas/team'
-import {
-  PlayerMessage,
-  playerMessageSchema,
-} from 'shared/src/messages/player/playerMessages'
-import {
-  GameStartedMessage,
-  PlayerConnectedMessage,
-  PongMessage,
-  UnparsablePlayerErrorMessage,
-  WaitingForGameMessage,
-} from 'shared/src/messages/server/serverMessages'
+import { PlayerConnectedMessage } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
-import { RawData, WebSocket, WebSocketServer } from 'ws'
-import { shuffleArray } from './core/cards'
+import { WebSocket, WebSocketServer } from 'ws'
 import {
   addConnectedPlayer,
   deletePlayerFromState,
   PlayerState,
 } from './core/database/players'
-import { InitializedGame, ServerResponse } from './core/events'
-import { searchForNewGame } from './core/game'
+import { processPlayerMessage } from './core/player'
 
 export function createWebSocketServer(server: HTTPServer) {
   const webSocketServer = new WebSocketServer({ server })
@@ -44,165 +28,6 @@ const WS_PORT = 3000
 const httpServer = app.listen(WS_PORT)
 
 createWebSocketServer(httpServer)
-
-function constructGameFromInitializedGame(
-  initializedGame: InitializedGame,
-): Effect.Effect<Game> {
-  return Effect.succeed({
-    uuid: initializedGame.game.uuid,
-    status: initializedGame.game.row.status,
-    teamA: {
-      uuid: initializedGame.teamA.uuid,
-      name: initializedGame.teamA.row.name,
-      player1: {
-        uuid: initializedGame.teamA.row.player1_UUID,
-      },
-      player2: {
-        uuid: initializedGame.teamA.row.player2_UUID,
-      },
-      score: initializedGame.teamA.row.score,
-    },
-    teamB: {
-      uuid: initializedGame.teamB.uuid,
-      name: initializedGame.teamB.row.name,
-      player1: {
-        uuid: initializedGame.teamB.row.player1_UUID,
-      } as TeamPlayer,
-      player2: {
-        uuid: initializedGame.teamB.row.player2_UUID,
-      } as TeamPlayer,
-      score: initializedGame.teamB.row.score,
-    },
-    currentParty: {
-      uuid: initializedGame.party.uuid,
-      status: initializedGame.party.row.status,
-      asset: initializedGame.party.row.asset,
-      indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
-      folds: initializedGame.party.row.folds,
-    },
-  })
-}
-
-function shuffleDeck(deck: Card[]): Effect.Effect<Card[]> {
-  return Effect.succeed(shuffleArray(deck))
-}
-
-function distributeCards(deck: Card[]): Effect.Effect<Card[][]> {
-  return pipe(
-    shuffleDeck(deck),
-    Effect.andThen((shuffledDeck) =>
-      Effect.succeed([
-        shuffledDeck.slice(0, 8),
-        shuffledDeck.slice(8, 16),
-        shuffledDeck.slice(16, 24),
-        shuffledDeck.slice(24, 32),
-      ]),
-    ),
-  )
-}
-
-function gameStartedResponsesFromInitializedGame(
-  initializedGame: InitializedGame,
-): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
-  return pipe(
-    constructGameFromInitializedGame(initializedGame),
-    Effect.andThen((game) =>
-      pipe(
-        distributeCards(deckOf32Cards),
-        Effect.andThen((distributedCards) =>
-          Effect.forEach(initializedGame.players, (playerState, index) =>
-            Effect.succeed({
-              playerState,
-              data: {
-                _tag: 'GameStartedMessage' as const,
-                data: {
-                  game,
-                  hand: distributedCards[index],
-                },
-              },
-            }),
-          ),
-        ),
-      ),
-    ),
-  )
-}
-
-function treatPlayerMessage(
-  connectedPlayerState: PlayerState,
-  playerEvent: PlayerMessage,
-): Effect.Effect<
-  | Array<ServerResponse<PongMessage>>
-  | Array<ServerResponse<WaitingForGameMessage>>
-  | Array<ServerResponse<GameStartedMessage>>
-> {
-  return pipe(
-    Match.type<PlayerMessage>().pipe(
-      Match.tag('PingMessage', () =>
-        Effect.succeed([
-          {
-            playerState: connectedPlayerState,
-            data: {
-              _tag: 'PongMessage' as const,
-            },
-          },
-        ]),
-      ),
-      Match.tag('PlayGameMessage', () =>
-        pipe(
-          searchForNewGame(connectedPlayerState),
-          Effect.andThen((maybeInitializedGame) =>
-            Option.match(maybeInitializedGame, {
-              onSome: (initializedGame) =>
-                gameStartedResponsesFromInitializedGame(initializedGame),
-              onNone: () =>
-                Effect.succeed([
-                  {
-                    playerState: connectedPlayerState,
-                    data: {
-                      _tag: 'WaitingForGameMessage' as const,
-                    },
-                  },
-                ]),
-            }),
-          ),
-        ),
-      ),
-      Match.exhaustive,
-    )(playerEvent),
-  )
-}
-
-function parsePlayerMessage(
-  message: RawData,
-): Effect.Effect<PlayerMessage, UnparsablePlayerErrorMessage> {
-  return pipe(
-    S.decodeUnknownEither(playerMessageSchema)(JSON.parse(message.toString())),
-    Effect.mapError(() => {
-      return {
-        _tag: 'UnparsablePlayerErrorMessage' as const,
-        message: `Unable to parse message from player`,
-      }
-    }),
-  )
-}
-
-function processPlayerMessage(
-  message: RawData,
-  connectedPlayerState: PlayerState,
-): Effect.Effect<
-  | Array<ServerResponse<PongMessage>>
-  | Array<ServerResponse<WaitingForGameMessage>>
-  | Array<ServerResponse<GameStartedMessage>>,
-  UnparsablePlayerErrorMessage
-> {
-  return pipe(
-    parsePlayerMessage(message),
-    Effect.andThen((parsedMessage) =>
-      treatPlayerMessage(connectedPlayerState, parsedMessage),
-    ),
-  )
-}
 
 function handleClientDisconnection(player: PlayerState) {
   Effect.runPromiseExit(
@@ -236,7 +61,9 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
         ),
         Effect.mapError((errorResponse) => {
           console.error(errorResponse.message)
-          webSocketClientConnection.send(JSON.stringify(errorResponse))
+          connectedPlayerState.row.connection.send(
+            JSON.stringify(errorResponse),
+          )
         }),
       ),
     )
