@@ -22,7 +22,7 @@ const bidMessageSchema = Schema.Struct({
 export const playerMessageSchema = Schema.Union(
   pingMessageSchema,
   playGameMessageSchema,
-  // bidMessageSchema,
+  bidMessageSchema,
 );
 
 export type PingMessage = typeof pingMessageSchema.Type;

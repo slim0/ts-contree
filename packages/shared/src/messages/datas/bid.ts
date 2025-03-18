@@ -1,11 +1,12 @@
 import { Schema } from "@effect/schema";
-import { assetSchema } from "./party";
+import { assetSchema, partyUUIDSchema } from "./party";
 
 export const bidUUIDSchema = Schema.UUID.pipe(Schema.brand("BidUUID"));
 export type BidUUID = typeof bidUUIDSchema.Type;
 
 export const bidSchema = Schema.Struct({
   uuid: bidUUIDSchema,
+  partyUUID: partyUUIDSchema,
   asset: assetSchema,
   bet: Schema.Number,
 });

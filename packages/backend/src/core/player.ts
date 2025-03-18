@@ -6,6 +6,7 @@ import {
 } from 'shared/src/messages/player/playerMessages'
 import {
   GameStartedMessage,
+  NotManagedErrorMessage,
   PlayerStatusErrorMessage,
   PongMessage,
   UnparsablePlayerErrorMessage,
@@ -33,6 +34,7 @@ function verifyPlayerStatus(
     Match.exhaustive,
   )
 }
+
 function treatPlayerMessage(
   connectedPlayerState: PlayerState,
   playerEvent: PlayerMessage,
@@ -40,7 +42,7 @@ function treatPlayerMessage(
   | Array<ServerResponse<PongMessage>>
   | Array<ServerResponse<WaitingForGameMessage>>
   | Array<ServerResponse<GameStartedMessage>>,
-  PlayerStatusErrorMessage
+  PlayerStatusErrorMessage | NotManagedErrorMessage
 > {
   return pipe(
     Match.type<PlayerMessage>().pipe(
@@ -75,6 +77,24 @@ function treatPlayerMessage(
           ),
         ),
       ),
+      Match.tag('BidMessage', (bidMessage) =>
+        pipe(
+          Effect.andThen(() =>
+            Effect.if(bidMessage.data === null, {
+              onTrue: () =>
+                Effect.fail({
+                  _tag: 'NotManagedErrorMessage' as const,
+                  message: 'NotManagedErrorMessage',
+                }),
+              onFalse: () =>
+                Effect.fail({
+                  _tag: 'NotManagedErrorMessage' as const,
+                  message: 'NotManagedErrorMessage',
+                }),
+            }),
+          ),
+        ),
+      ),
       Match.exhaustive,
     )(playerEvent),
   )
@@ -103,7 +123,9 @@ export function processPlayerMessage(
   | Array<ServerResponse<PongMessage>>
   | Array<ServerResponse<WaitingForGameMessage>>
   | Array<ServerResponse<GameStartedMessage>>,
-  UnparsablePlayerErrorMessage | PlayerStatusErrorMessage
+  | UnparsablePlayerErrorMessage
+  | PlayerStatusErrorMessage
+  | NotManagedErrorMessage
 > {
   return pipe(
     parsePlayerMessage(message),

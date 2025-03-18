@@ -51,13 +51,21 @@ export const playerStatusErrorMessageSchema = Schema.Struct({
   message: Schema.String,
 });
 
+export const NotManagedErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("NotManagedErrorMessage"),
+  message: Schema.String,
+});
+
 export type UnparsablePlayerErrorMessage =
   typeof unparsablePlayerErrorMessageSchema.Type;
 
 export type PlayerStatusErrorMessage =
   typeof playerStatusErrorMessageSchema.Type;
 
+export type NotManagedErrorMessage = typeof NotManagedErrorMessageSchema.Type;
+
 export const serverErrorMessageSchema = Schema.Union(
+  NotManagedErrorMessageSchema,
   unparsablePlayerErrorMessageSchema,
   playerStatusErrorMessageSchema,
 );
