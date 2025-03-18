@@ -1,5 +1,6 @@
 import { Schema } from '@effect/schema'
 import { Effect, Match, Option, pipe } from 'effect'
+import { PlayerStatus } from 'shared/src/messages/datas/player'
 import {
   PlayerMessage,
   playerMessageSchema,
@@ -21,17 +22,17 @@ import {
 import { ServerResponse } from './types'
 
 function verifyPlayerStatus(
-  player: PlayerState,
+  playerState: PlayerState,
+  validPlayerStatuses: PlayerStatus[],
 ): Effect.Effect<void, PlayerStatusErrorMessage> {
-  return Match.value(player.row.status).pipe(
-    Match.when('connected', () => Effect.void),
-    Match.whenOr('waitingForGame', 'playing', (status) =>
+  return Match.value(playerState.row.status).pipe(
+    Match.whenOr(...validPlayerStatuses, () => Effect.void),
+    Match.orElse((status) =>
       Effect.fail({
         _tag: 'PlayerAlreadyPlayingErrorMessage' as const,
-        message: `Player with uuid=${player.uuid} is already in status '${status}'`,
+        message: `Player with uuid=${playerState.uuid} has status '${status}', which is not in ${validPlayerStatuses}`,
       }),
     ),
-    Match.exhaustive,
   )
 }
 
@@ -58,7 +59,7 @@ function treatPlayerMessage(
       ),
       Match.tag('PlayGameMessage', () =>
         pipe(
-          verifyPlayerStatus(connectedPlayerState),
+          verifyPlayerStatus(connectedPlayerState, ['connected']),
           Effect.andThen(() => searchForNewGame(connectedPlayerState)),
           Effect.andThen((maybeInitializedGame) =>
             Option.match(maybeInitializedGame, {
