@@ -19,13 +19,13 @@ export const bidsState: BidsState = new Map()
 
 const mutex = new Mutex()
 
-export async function createBid(): Promise<BidState> {
+export async function createBid(asset: Asset, bet: number): Promise<BidState> {
   const release = await mutex.acquire()
   try {
     const uuid = uuidv4() as BidUUID
     const row = {
-      asset: null,
-      bet: 0,
+      asset: asset,
+      bet: bet,
     }
     bidsState.set(uuid, row)
     return { uuid, row }

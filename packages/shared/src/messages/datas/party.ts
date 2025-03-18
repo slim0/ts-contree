@@ -13,7 +13,6 @@ export type Asset = typeof assetSchema.Type;
 
 export const partySchema = Schema.Struct({
   uuid: partyUUIDSchema,
-  asset: assetSchema,
   folds: Schema.Array(foldSchema),
   status: partyStatusSchema,
   indexCurrentPlayer: Schema.Number,

@@ -113,7 +113,6 @@ describe('WebSocket Server', () => {
     const player1GameStartedMessage =
       await player1Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    expect(player1GameStartedMessage.data.game.currentParty.asset).toBe(null)
     expect(player1GameStartedMessage.data.game.currentParty.folds.length).toBe(
       0,
     )

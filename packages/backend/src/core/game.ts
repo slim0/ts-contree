@@ -125,7 +125,6 @@ export function constructGameFromInitializedGame(
     currentParty: {
       uuid: initializedGame.party.uuid,
       status: initializedGame.party.row.status,
-      asset: initializedGame.party.row.asset,
       indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
       folds: initializedGame.party.row.folds,
     },

@@ -1,7 +1,7 @@
 import { Mutex } from 'async-mutex'
 import { Fold } from 'shared/src/messages/datas/fold'
 import { GameUUID } from 'shared/src/messages/datas/game'
-import { Asset, PartyStatus, PartyUUID } from 'shared/src/messages/datas/party'
+import { PartyStatus, PartyUUID } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
 import { v4 as uuidv4 } from 'uuid'
 import { TeamRow } from './teams'
@@ -9,7 +9,6 @@ import { TeamRow } from './teams'
 type PartyRow = {
   gameUUID: GameUUID
   status: PartyStatus
-  asset: Asset
   folds: Array<Fold>
   indexCurrentPlayer: number
 }
@@ -51,7 +50,6 @@ export async function createParty(gameUUID: GameUUID): Promise<PartyState> {
       row: {
         gameUUID: gameUUID,
         status: 'start',
-        asset: null,
         folds: [],
         indexCurrentPlayer: 0,
       },
