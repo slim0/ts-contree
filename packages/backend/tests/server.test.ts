@@ -4,18 +4,23 @@ import {
   deckOf32Cards,
   uniqueNameFromCard,
 } from 'shared/src/messages/datas/cards'
+import { PartyUUID } from 'shared/src/messages/datas/party'
 import {
+  BidMessage,
   PingMessage,
   PlayGameMessage,
 } from 'shared/src/messages/player/playerMessages'
 import {
   gameStartedMessageSchema,
+  notYourTurnErrorMessageSchema,
   playerConnectedMessageSchema,
   playerStatusErrorMessageSchema,
   pongMessageSchema,
+  stateNotFoundErrorMessageSchema,
   unparsablePlayerErrorMessageSchema,
   waitingForGameMessageSchema,
 } from 'shared/src/messages/server/serverMessages'
+import { v4 as uuidv4 } from 'uuid'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { playersState } from '../src/core/database/players'
 import { startServer, TestWebSocket } from './webSocketTestUtils'
@@ -184,6 +189,32 @@ describe('WebSocket Server', () => {
     player1Connection.send(JSON.stringify(playGameMessage))
     await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
+
+    // Test sending wrong partyUUID
+    const wrongBidMessage: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        asset: 'clubs',
+        partyUUID: uuidv4() as PartyUUID,
+        targetScore: 80,
+      },
+    }
+    player1Connection.send(JSON.stringify(wrongBidMessage))
+    await player1Connection.waitForMessageSchema(
+      stateNotFoundErrorMessageSchema,
+    )
+
+    // Test player 2 trying to play before player 1
+    const wrongBidMessage2: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        asset: 'clubs',
+        partyUUID: player2GameStartedMessage.data.game.currentParty.uuid,
+        targetScore: 80,
+      },
+    }
+    player2Connection.send(JSON.stringify(wrongBidMessage2))
+    await player2Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
 
     // Close connections
     player1Connection.close()

@@ -1,4 +1,5 @@
 import { Schema } from "@effect/schema";
+import { bidSchema } from "../datas/bid";
 import { gameSchema } from "../datas/game";
 import { handSchema } from "../datas/hand";
 import { playerSchema } from "../datas/player";
@@ -26,17 +27,24 @@ export const gameStartedMessageSchema = Schema.Struct({
   }),
 });
 
+export const newBidMessageSchema = Schema.Struct({
+  _tag: Schema.tag("NewBidMessage"),
+  data: bidSchema,
+});
+
 export type GameStartedMessage = typeof gameStartedMessageSchema.Type;
 
 const serverReponseMessageSchema = Schema.Union(
   pongMessageSchema,
   waitingForGameMessageSchema,
   gameStartedMessageSchema,
+  newBidMessageSchema,
 );
 
 export type PongMessage = typeof pongMessageSchema.Type;
 export type PlayerConnectedMessage = typeof playerConnectedMessageSchema.Type;
 export type WaitingForGameMessage = typeof waitingForGameMessageSchema.Type;
+export type NewBidMessage = typeof newBidMessageSchema.Type;
 export type ServerMessage = typeof serverReponseMessageSchema.Type;
 
 // Error
@@ -51,8 +59,23 @@ export const playerStatusErrorMessageSchema = Schema.Struct({
   message: Schema.String,
 });
 
-export const NotManagedErrorMessageSchema = Schema.Struct({
-  _tag: Schema.tag("NotManagedErrorMessage"),
+export const notImplementedErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("NotImplementedErrorMessage"),
+  message: Schema.String,
+});
+
+export const permissionErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("PermissionErrorMessage"),
+  message: Schema.String,
+});
+
+export const stateNotFoundErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("StateNotFoundErrorMessage"),
+  message: Schema.String,
+});
+
+export const notYourTurnErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("NotYourTurnErrorMessage"),
   message: Schema.String,
 });
 
@@ -62,12 +85,23 @@ export type UnparsablePlayerErrorMessage =
 export type PlayerStatusErrorMessage =
   typeof playerStatusErrorMessageSchema.Type;
 
-export type NotManagedErrorMessage = typeof NotManagedErrorMessageSchema.Type;
+export type NotImplementedErrorMessage =
+  typeof notImplementedErrorMessageSchema.Type;
+
+export type PermissionErrorMessage = typeof permissionErrorMessageSchema.Type;
+
+export type StateNotFoundErrorMessage =
+  typeof stateNotFoundErrorMessageSchema.Type;
+
+export type NotYourTurnErrorMessage = typeof notYourTurnErrorMessageSchema.Type;
 
 export const serverErrorMessageSchema = Schema.Union(
-  NotManagedErrorMessageSchema,
+  notImplementedErrorMessageSchema,
   unparsablePlayerErrorMessageSchema,
   playerStatusErrorMessageSchema,
+  permissionErrorMessageSchema,
+  stateNotFoundErrorMessageSchema,
+  notYourTurnErrorMessageSchema,
 );
 
 export type ServerErrorMessage = typeof serverErrorMessageSchema.Type;
