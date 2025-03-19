@@ -15,7 +15,6 @@ export type PlayerStatus = typeof playerStatusSchema.Type;
 
 export const playerSchema = Schema.Struct({
   uuid: playerUUIDSchema,
-  // name: playerNameSchema,
   status: playerStatusSchema,
 });
 

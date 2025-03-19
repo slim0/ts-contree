@@ -1,12 +1,12 @@
 import { Mutex } from 'async-mutex'
-import { BidUUID } from 'shared/src/messages/datas/bid'
+import { BetScore, BidUUID } from 'shared/src/messages/datas/bid'
 import { Asset, PartyUUID } from 'shared/src/messages/datas/party'
 import { v4 as uuidv4 } from 'uuid'
 
 type BidRow = {
   partyUUID: PartyUUID
   asset: Asset
-  bet: number
+  betScore: BetScore
 }
 
 export type BidState = {
@@ -23,7 +23,7 @@ const mutex = new Mutex()
 export async function createBid(
   partyUUID: PartyUUID,
   asset: Asset,
-  bet: number,
+  betScore: BetScore,
 ): Promise<BidState> {
   const release = await mutex.acquire()
   try {
@@ -31,7 +31,7 @@ export async function createBid(
     const row = {
       partyUUID: partyUUID,
       asset: asset,
-      bet: bet,
+      betScore: betScore,
     }
     bidsState.set(uuid, row)
     return { uuid, row }

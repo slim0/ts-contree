@@ -1,4 +1,5 @@
 import { Schema } from "@effect/schema";
+import { betScoreSchema } from "../datas/bid";
 import { assetSchema, partyUUIDSchema } from "../datas/party";
 
 const pingMessageSchema = Schema.Struct({
@@ -12,7 +13,7 @@ const playGameMessageSchema = Schema.Struct({
 const bidMessageDataSchema = Schema.Struct({
   partyUUID: partyUUIDSchema,
   asset: assetSchema,
-  targetScore: Schema.Number,
+  betScore: betScoreSchema,
 });
 
 const bidMessageSchema = Schema.Struct({

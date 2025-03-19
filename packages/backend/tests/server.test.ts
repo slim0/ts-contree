@@ -196,7 +196,7 @@ describe('WebSocket Server', () => {
       data: {
         asset: 'clubs',
         partyUUID: uuidv4() as PartyUUID,
-        targetScore: 80,
+        betScore: 80,
       },
     }
     player1Connection.send(JSON.stringify(wrongBidMessage))
@@ -210,7 +210,7 @@ describe('WebSocket Server', () => {
       data: {
         asset: 'clubs',
         partyUUID: player2GameStartedMessage.data.game.currentParty.uuid,
-        targetScore: 80,
+        betScore: 80,
       },
     }
     player2Connection.send(JSON.stringify(wrongBidMessage2))

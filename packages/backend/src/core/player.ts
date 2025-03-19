@@ -217,7 +217,7 @@ function treatPlayerMessage(
                         createBid(
                           states.partyState.uuid,
                           bidMessageData.asset,
-                          bidMessageData.targetScore,
+                          bidMessageData.betScore,
                         ),
                       ),
                     ),
@@ -239,7 +239,7 @@ function treatPlayerMessage(
                                   uuid: bidState.uuid,
                                   partyUUID: states.partyState.uuid,
                                   asset: bidState.row.asset,
-                                  bet: bidState.row.bet,
+                                  betScore: bidState.row.betScore,
                                 },
                               },
                             })),
