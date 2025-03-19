@@ -1,6 +1,6 @@
 import { Schema } from "@effect/schema";
-import { betScoreSchema } from "../datas/bid";
-import { assetSchema, partyUUIDSchema } from "../datas/party";
+import { betSchema } from "../datas/bid";
+import { partyUUIDSchema } from "../datas/party";
 
 const pingMessageSchema = Schema.Struct({
   _tag: Schema.tag("PingMessage"),
@@ -12,13 +12,12 @@ const playGameMessageSchema = Schema.Struct({
 
 const bidMessageDataSchema = Schema.Struct({
   partyUUID: partyUUIDSchema,
-  asset: assetSchema,
-  betScore: betScoreSchema,
+  bet: Schema.NullOr(betSchema),
 });
 
 const bidMessageSchema = Schema.Struct({
   _tag: Schema.tag("BidMessage"),
-  data: Schema.NullOr(bidMessageDataSchema),
+  data: bidMessageDataSchema,
 });
 
 export type BidMessage = typeof bidMessageSchema.Type;

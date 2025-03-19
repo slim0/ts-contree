@@ -115,7 +115,6 @@ export class TestWebSocket extends WebSocket {
         clearTimeout(timerId)
         this.removeEventListener('message', checkForMessage)
       }
-
       this.addEventListener('message', checkForMessage)
 
       timerId = setTimeout(() => {

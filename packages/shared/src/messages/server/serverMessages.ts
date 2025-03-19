@@ -55,7 +55,7 @@ export const unparsablePlayerErrorMessageSchema = Schema.Struct({
 });
 
 export const playerStatusErrorMessageSchema = Schema.Struct({
-  _tag: Schema.tag("PlayerAlreadyPlayingErrorMessage"),
+  _tag: Schema.tag("PlayerStatusErrorMessage"),
   message: Schema.String,
 });
 

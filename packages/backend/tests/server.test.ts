@@ -12,6 +12,7 @@ import {
 } from 'shared/src/messages/player/playerMessages'
 import {
   gameStartedMessageSchema,
+  newBidMessageSchema,
   notYourTurnErrorMessageSchema,
   playerConnectedMessageSchema,
   playerStatusErrorMessageSchema,
@@ -194,9 +195,11 @@ describe('WebSocket Server', () => {
     const wrongBidMessage: BidMessage = {
       _tag: 'BidMessage',
       data: {
-        asset: 'clubs',
         partyUUID: uuidv4() as PartyUUID,
-        betScore: 80,
+        bet: {
+          asset: 'clubs',
+          betScore: 80,
+        },
       },
     }
     player1Connection.send(JSON.stringify(wrongBidMessage))
@@ -208,13 +211,28 @@ describe('WebSocket Server', () => {
     const wrongBidMessage2: BidMessage = {
       _tag: 'BidMessage',
       data: {
-        asset: 'clubs',
         partyUUID: player2GameStartedMessage.data.game.currentParty.uuid,
-        betScore: 80,
+        bet: {
+          asset: 'clubs',
+          betScore: 80,
+        },
       },
     }
     player2Connection.send(JSON.stringify(wrongBidMessage2))
     await player2Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
+
+    // Player 1 decide not to bet
+    const bidMessageNotBet: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        partyUUID: player1GameStartedMessage.data.game.currentParty.uuid,
+        bet: null,
+      },
+    }
+    player1Connection.send(JSON.stringify(bidMessageNotBet))
+    const receivedNullBid =
+      await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(receivedNullBid.data)
 
     // Close connections
     player1Connection.close()

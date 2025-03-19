@@ -8,7 +8,7 @@ export type PartyUUID = typeof partyUUIDSchema.Type;
 export const partyStatusSchema = Schema.Literal("start", "pending", "finish");
 export type PartyStatus = typeof partyStatusSchema.Type;
 
-export const assetSchema = Schema.NullOr(colorSchema);
+export const assetSchema = colorSchema;
 export type Asset = typeof assetSchema.Type;
 
 export const partySchema = Schema.Struct({
