@@ -23,6 +23,7 @@ import {
 } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { partiesState } from '../src/core/database/parties'
 import { playersState } from '../src/core/database/players'
 import { startServer, TestWebSocket } from './webSocketTestUtils'
 
@@ -130,7 +131,6 @@ describe('WebSocket Server', () => {
     )
 
     expect(player1GameStartedMessage.data.game.status).toBe('start')
-
     expect(player1GameStartedMessage.data.game.teamA.score).toBe(0)
     expect(player1GameStartedMessage.data.game.teamA.name).toBe('Red Devil')
     expect(player1GameStartedMessage.data.game.teamA.player1.uuid).toBe(
@@ -191,6 +191,8 @@ describe('WebSocket Server', () => {
     await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
 
+    const partyUUID = player1GameStartedMessage.data.game.currentParty.uuid
+
     // Test sending wrong partyUUID
     const wrongBidMessage: BidMessage = {
       _tag: 'BidMessage',
@@ -206,12 +208,13 @@ describe('WebSocket Server', () => {
     await player1Connection.waitForMessageSchema(
       stateNotFoundErrorMessageSchema,
     )
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
 
     // Test player 2 trying to play before player 1
     const wrongBidMessage2: BidMessage = {
       _tag: 'BidMessage',
       data: {
-        partyUUID: player2GameStartedMessage.data.game.currentParty.uuid,
+        partyUUID,
         bet: {
           asset: 'clubs',
           betScore: 80,
@@ -220,19 +223,21 @@ describe('WebSocket Server', () => {
     }
     player2Connection.send(JSON.stringify(wrongBidMessage2))
     await player2Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
 
     // Player 1 decide not to bet
     const bidMessageNotBet: BidMessage = {
       _tag: 'BidMessage',
       data: {
-        partyUUID: player1GameStartedMessage.data.game.currentParty.uuid,
+        partyUUID,
         bet: null,
       },
     }
     player1Connection.send(JSON.stringify(bidMessageNotBet))
     const receivedNullBid =
       await player1Connection.waitForMessageSchema(newBidMessageSchema)
-    expect(receivedNullBid.data)
+    expect(receivedNullBid.data.bet).toBeNull
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
 
     // Close connections
     player1Connection.close()
