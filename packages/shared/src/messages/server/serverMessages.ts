@@ -2,7 +2,9 @@ import { Schema } from "@effect/schema";
 import { bidSchema } from "../datas/bid";
 import { gameSchema } from "../datas/game";
 import { handSchema } from "../datas/hand";
+import { partySchema } from "../datas/party";
 import { playerSchema } from "../datas/player";
+import { teamSchema } from "../datas/team";
 
 // Success
 
@@ -23,6 +25,9 @@ export const gameStartedMessageSchema = Schema.Struct({
   _tag: Schema.tag("GameStartedMessage"),
   data: Schema.Struct({
     game: gameSchema,
+    teamA: teamSchema,
+    teamB: teamSchema,
+    currentParty: partySchema,
     hand: handSchema,
   }),
 });

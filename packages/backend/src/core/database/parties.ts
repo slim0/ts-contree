@@ -1,38 +1,29 @@
 import { Mutex } from 'async-mutex'
 import { Effect, pipe } from 'effect'
-import { Fold } from 'shared/src/messages/datas/fold'
 import { GameUUID } from 'shared/src/messages/datas/game'
-import { PartyStatus, PartyUUID } from 'shared/src/messages/datas/party'
+import { Party, PartyUUID } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
+import { Team } from 'shared/src/messages/datas/team'
 import { StateNotFoundErrorMessage } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
-import { TeamRow } from './teams'
 
-type PartyRow = {
-  gameUUID: GameUUID
-  status: PartyStatus
-  folds: Array<Fold>
-  indexCurrentPlayer: number
-  nullBidInARow: number
-}
+export type PartyState = { uuid: PartyUUID; row: Party }
 
-export type PartyState = { uuid: PartyUUID; row: PartyRow }
-
-type PartiesState = Map<PartyUUID, PartyRow>
+type PartiesState = Map<PartyUUID, Party>
 
 export const partiesState: PartiesState = new Map()
 
 const mutex = new Mutex()
 
 export function getPlayers(
-  teamA_Row: TeamRow,
-  teamB_Row: TeamRow,
+  teamA: Team,
+  teamB: Team,
 ): Effect.Effect<PlayerUUID[]> {
   return Effect.succeed([
-    teamA_Row.player1_UUID,
-    teamB_Row.player1_UUID,
-    teamA_Row.player2_UUID,
-    teamB_Row.player2_UUID,
+    teamA.player1_UUID,
+    teamB.player1_UUID,
+    teamA.player2_UUID,
+    teamB.player2_UUID,
   ])
 }
 
@@ -66,14 +57,14 @@ export function getPartyStateEffect(
 }
 
 export function getCurrentPlayer(
-  partyRow: PartyRow,
-  teamA_Row: TeamRow,
-  teamB_Row: TeamRow,
+  party: Party,
+  teamA: Team,
+  teamB: Team,
 ): Effect.Effect<PlayerUUID> {
   return pipe(
-    getPlayers(teamA_Row, teamB_Row),
+    getPlayers(teamA, teamB),
     Effect.andThen((players) =>
-      Effect.succeed(players[partyRow.indexCurrentPlayer]),
+      Effect.succeed(players[party.indexCurrentPlayer]),
     ),
   )
 }
@@ -81,9 +72,11 @@ export function getCurrentPlayer(
 export async function createParty(gameUUID: GameUUID): Promise<PartyState> {
   const release = await mutex.acquire()
   try {
+    const uuid = uuidv4() as PartyUUID
     const partyState: PartyState = {
-      uuid: uuidv4() as PartyUUID,
+      uuid,
       row: {
+        uuid,
         gameUUID: gameUUID,
         status: 'start',
         folds: [],

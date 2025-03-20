@@ -1,6 +1,5 @@
 import { Schema } from "@effect/schema";
-import { partySchema } from "./party";
-import { teamSchema } from "./team";
+import { teamUUIDSchema } from "./team";
 
 export const gameUUIDSchema = Schema.UUID.pipe(Schema.brand("GameUUID"));
 export type GameUUID = typeof gameUUIDSchema.Type;
@@ -10,9 +9,8 @@ export type GameStatus = typeof gameStatusSchema.Type;
 
 export const gameSchema = Schema.Struct({
   uuid: gameUUIDSchema,
-  currentParty: partySchema,
-  teamA: teamSchema,
-  teamB: teamSchema,
+  teamA_UUID: teamUUIDSchema,
+  teamB_UUID: teamUUIDSchema,
   status: gameStatusSchema,
 });
 

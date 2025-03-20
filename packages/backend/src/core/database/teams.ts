@@ -1,22 +1,16 @@
 import { Mutex } from 'async-mutex'
 import { Effect, pipe } from 'effect'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
-import { TeamName, TeamScore, TeamUUID } from 'shared/src/messages/datas/team'
+import { Team, TeamName, TeamUUID } from 'shared/src/messages/datas/team'
 import { StateNotFoundErrorMessage } from 'shared/src/messages/server/serverMessages'
 import { v4 as uuidv4 } from 'uuid'
 
-export type TeamRow = {
-  name: TeamName
-  player1_UUID: PlayerUUID
-  player2_UUID: PlayerUUID
-  score: TeamScore
-}
 export type TeamState = {
   uuid: TeamUUID
-  row: TeamRow
+  row: Team
 }
 
-type TeamsState = Map<TeamUUID, TeamRow>
+type TeamsState = Map<TeamUUID, Team>
 
 export const teamsState: TeamsState = new Map()
 
@@ -60,6 +54,7 @@ export async function createTeam(
   try {
     const uuid = uuidv4() as TeamUUID
     const row = {
+      uuid,
       name: name,
       player1_UUID: player1,
       player2_UUID: player2,

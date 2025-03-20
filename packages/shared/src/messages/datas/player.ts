@@ -1,4 +1,5 @@
 import { Schema } from "@effect/schema";
+import { handSchema } from "./hand";
 
 export const playerUUIDSchema = Schema.UUID.pipe(Schema.brand("PlayerUUID"));
 export type PlayerUUID = typeof playerUUIDSchema.Type;
@@ -16,6 +17,7 @@ export type PlayerStatus = typeof playerStatusSchema.Type;
 export const playerSchema = Schema.Struct({
   uuid: playerUUIDSchema,
   status: playerStatusSchema,
+  hand: handSchema,
 });
 
 export type Player = typeof playerSchema.Type;

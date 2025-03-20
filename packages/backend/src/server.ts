@@ -47,6 +47,7 @@ async function handleWebSocketConnection(webSocketClientConnection: WebSocket) {
     data: {
       uuid: connectedPlayerState.uuid,
       status: connectedPlayerState.row.status,
+      hand: [],
     },
   }
   webSocketClientConnection.send(JSON.stringify(playerConnectedMessage))

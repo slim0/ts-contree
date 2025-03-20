@@ -120,37 +120,23 @@ describe('WebSocket Server', () => {
     const player1GameStartedMessage =
       await player1Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    expect(player1GameStartedMessage.data.game.currentParty.folds.length).toBe(
+    expect(player1GameStartedMessage.data.currentParty.folds.length).toBe(0)
+    expect(player1GameStartedMessage.data.currentParty.indexCurrentPlayer).toBe(
       0,
     )
-    expect(
-      player1GameStartedMessage.data.game.currentParty.indexCurrentPlayer,
-    ).toBe(0)
-    expect(player1GameStartedMessage.data.game.currentParty.nullBidInARow).toBe(
-      0,
-    )
-    expect(player1GameStartedMessage.data.game.currentParty.status).toBe(
-      'start',
-    )
+    expect(player1GameStartedMessage.data.currentParty.nullBidInARow).toBe(0)
+    expect(player1GameStartedMessage.data.currentParty.status).toBe('start')
 
     expect(player1GameStartedMessage.data.game.status).toBe('start')
-    expect(player1GameStartedMessage.data.game.teamA.score).toBe(0)
-    expect(player1GameStartedMessage.data.game.teamA.name).toBe('Red Devil')
-    expect(player1GameStartedMessage.data.game.teamA.player1.uuid).toBe(
-      player1.uuid,
-    )
-    expect(player1GameStartedMessage.data.game.teamA.player2.uuid).toBe(
-      player3.uuid,
-    )
+    expect(player1GameStartedMessage.data.teamA.score).toBe(0)
+    expect(player1GameStartedMessage.data.teamA.name).toBe('Red Devil')
+    expect(player1GameStartedMessage.data.teamA.player1_UUID).toBe(player1.uuid)
+    expect(player1GameStartedMessage.data.teamA.player2_UUID).toBe(player3.uuid)
 
-    expect(player1GameStartedMessage.data.game.teamB.score).toBe(0)
-    expect(player1GameStartedMessage.data.game.teamB.name).toBe('Black Mamba')
-    expect(player1GameStartedMessage.data.game.teamB.player1.uuid).toBe(
-      player2.uuid,
-    )
-    expect(player1GameStartedMessage.data.game.teamB.player2.uuid).toBe(
-      player4.uuid,
-    )
+    expect(player1GameStartedMessage.data.teamB.score).toBe(0)
+    expect(player1GameStartedMessage.data.teamB.name).toBe('Black Mamba')
+    expect(player1GameStartedMessage.data.teamB.player1_UUID).toBe(player2.uuid)
+    expect(player1GameStartedMessage.data.teamB.player2_UUID).toBe(player4.uuid)
     expect(player1GameStartedMessage.data.hand.length).toBe(8)
 
     const player2GameStartedMessage =
@@ -194,7 +180,7 @@ describe('WebSocket Server', () => {
     await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
 
-    const partyUUID = player1GameStartedMessage.data.game.currentParty.uuid
+    const partyUUID = player1GameStartedMessage.data.currentParty.uuid
 
     // Test sending wrong partyUUID
     const wrongBidMessage: BidMessage = {

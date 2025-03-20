@@ -10,17 +10,11 @@ export type TeamName = typeof teamNameSchema.Type;
 export const teamScoreSchema = Schema.Number;
 export type TeamScore = typeof teamScoreSchema.Type;
 
-export const teamPlayerSchema = Schema.Struct({
-  uuid: playerUUIDSchema,
-});
-
-export type TeamPlayer = typeof teamPlayerSchema.Type;
-
 export const teamSchema = Schema.Struct({
   uuid: teamUUIDSchema,
   name: teamNameSchema,
-  player1: teamPlayerSchema,
-  player2: teamPlayerSchema,
+  player1_UUID: playerUUIDSchema,
+  player2_UUID: playerUUIDSchema,
   score: teamScoreSchema,
 });
 

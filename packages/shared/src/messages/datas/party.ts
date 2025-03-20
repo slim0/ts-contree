@@ -1,6 +1,7 @@
 import { Schema } from "@effect/schema";
 import { colorSchema } from "./color";
 import { foldSchema } from "./fold";
+import { gameUUIDSchema } from "./game";
 
 export const partyUUIDSchema = Schema.UUID.pipe(Schema.brand("PartyUUID"));
 export type PartyUUID = typeof partyUUIDSchema.Type;
@@ -13,6 +14,7 @@ export type Asset = typeof assetSchema.Type;
 
 export const partySchema = Schema.Struct({
   uuid: partyUUIDSchema,
+  gameUUID: gameUUIDSchema,
   folds: Schema.Array(foldSchema),
   status: partyStatusSchema,
   indexCurrentPlayer: Schema.Number,

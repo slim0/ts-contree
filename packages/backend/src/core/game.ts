@@ -1,18 +1,24 @@
 import { Effect, Match, Option, pipe } from 'effect'
 import { deckOf32Cards } from 'shared/src/messages/datas/cards'
-import { Game } from 'shared/src/messages/datas/game'
-import { TeamPlayer } from 'shared/src/messages/datas/team'
 import { GameStartedMessage } from 'shared/src/messages/server/serverMessages'
 import { distributeCards } from './cards'
-import { createGame } from './database/games'
-import { createParty } from './database/parties'
+import { createGame, GameState } from './database/games'
+import { createParty, PartyState } from './database/parties'
 import {
   PlayerState,
   retrieveWaitingPlayers,
   setPlayerStatus,
 } from './database/players'
-import { createTeam } from './database/teams'
-import { InitializedGame, ServerResponse } from './types'
+import { createTeam, TeamState } from './database/teams'
+import { ServerResponse } from './types'
+
+export type InitializedGameStates = {
+  game: GameState
+  teamA: TeamState
+  teamB: TeamState
+  party: PartyState
+  players: PlayerState[]
+}
 
 function searchAvailablePlayers(
   connectedPlayerState: PlayerState,
@@ -46,7 +52,7 @@ function searchAvailablePlayers(
 
 function initializeGame(
   players: PlayerState[],
-): Effect.Effect<InitializedGame> {
+): Effect.Effect<InitializedGameStates> {
   return pipe(
     Effect.Do,
     Effect.bind('teamA', () =>
@@ -77,82 +83,42 @@ function initializeGame(
 
 export function searchForNewGame(
   connectedPlayerState: PlayerState,
-): Effect.Effect<Option.Option<InitializedGame>> {
+): Effect.Effect<Option.Option<InitializedGameStates>> {
   return pipe(
     searchAvailablePlayers(connectedPlayerState),
     Effect.andThen((maybePlayers) =>
       Option.match(maybePlayers, {
-        onSome: (players) =>
+        onSome: (playersState) =>
           pipe(
-            initializeGame(players),
-            Effect.andThen((initializedGame) =>
-              Effect.succeed(Option.some(initializedGame)),
-            ),
+            initializeGame(playersState),
+            Effect.andThen((states) => Effect.succeed(Option.some(states))),
           ),
         onNone: () => Effect.succeed(Option.none()),
       }),
     ),
   )
 }
-export function constructGameFromInitializedGame(
-  initializedGame: InitializedGame,
-): Effect.Effect<Game> {
-  return Effect.succeed({
-    uuid: initializedGame.game.uuid,
-    status: initializedGame.game.row.status,
-    teamA: {
-      uuid: initializedGame.teamA.uuid,
-      name: initializedGame.teamA.row.name,
-      player1: {
-        uuid: initializedGame.teamA.row.player1_UUID,
-      },
-      player2: {
-        uuid: initializedGame.teamA.row.player2_UUID,
-      },
-      score: initializedGame.teamA.row.score,
-    },
-    teamB: {
-      uuid: initializedGame.teamB.uuid,
-      name: initializedGame.teamB.row.name,
-      player1: {
-        uuid: initializedGame.teamB.row.player1_UUID,
-      } as TeamPlayer,
-      player2: {
-        uuid: initializedGame.teamB.row.player2_UUID,
-      } as TeamPlayer,
-      score: initializedGame.teamB.row.score,
-    },
-    currentParty: {
-      uuid: initializedGame.party.uuid,
-      status: initializedGame.party.row.status,
-      indexCurrentPlayer: initializedGame.party.row.indexCurrentPlayer,
-      nullBidInARow: initializedGame.party.row.nullBidInARow,
-      folds: initializedGame.party.row.folds,
-    },
-  })
-}
-export function gameStartedResponsesFromInitializedGame(
-  initializedGame: InitializedGame,
+
+export function gameStartedResponses(
+  initializedGameStates: InitializedGameStates,
 ): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
   return pipe(
-    constructGameFromInitializedGame(initializedGame),
-    Effect.andThen((game) =>
-      pipe(
-        distributeCards(deckOf32Cards),
-        Effect.andThen((distributedCards) =>
-          Effect.forEach(initializedGame.players, (playerState, index) =>
-            Effect.succeed({
-              playerState,
-              data: {
-                _tag: 'GameStartedMessage' as const,
-                data: {
-                  game,
-                  hand: distributedCards[index],
-                },
-              },
-            }),
-          ),
-        ),
+    distributeCards(deckOf32Cards),
+    Effect.andThen((distributedCards) =>
+      Effect.forEach(initializedGameStates.players, (playerState, index) =>
+        Effect.succeed({
+          playerState,
+          data: {
+            _tag: 'GameStartedMessage' as const,
+            data: {
+              game: initializedGameStates.game.row,
+              teamA: initializedGameStates.teamA.row,
+              teamB: initializedGameStates.teamB.row,
+              currentParty: initializedGameStates.party.row,
+              hand: distributedCards[index],
+            },
+          },
+        }),
       ),
     ),
   )

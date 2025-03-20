@@ -6,10 +6,7 @@ import {
   WaitingForGameMessage,
 } from 'shared/src/messages/server/serverMessages'
 import { PlayerState } from '../core/database/players'
-import {
-  gameStartedResponsesFromInitializedGame,
-  searchForNewGame,
-} from '../core/game'
+import { gameStartedResponses, searchForNewGame } from '../core/game'
 import { ServerResponse } from '../core/types'
 
 function verifyPlayerStatus(
@@ -38,10 +35,10 @@ export function onPlayGameMessage(
   return pipe(
     verifyPlayerStatus(connectedPlayerState, ['connected']),
     Effect.andThen(() => searchForNewGame(connectedPlayerState)),
-    Effect.andThen((maybeInitializedGame) =>
-      Option.match(maybeInitializedGame, {
-        onSome: (initializedGame) =>
-          gameStartedResponsesFromInitializedGame(initializedGame),
+    Effect.andThen((maybeInitializedGameStates) =>
+      Option.match(maybeInitializedGameStates, {
+        onSome: (initializedGameStates) =>
+          gameStartedResponses(initializedGameStates),
         onNone: () =>
           Effect.succeed([
             {

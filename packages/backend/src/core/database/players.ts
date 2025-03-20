@@ -1,12 +1,13 @@
 import { Mutex } from 'async-mutex'
-import { Hand } from 'shared/src/messages/datas/hand'
-import { PlayerStatus, PlayerUUID } from 'shared/src/messages/datas/player'
+import {
+  Player,
+  PlayerStatus,
+  PlayerUUID,
+} from 'shared/src/messages/datas/player'
 import WebSocket from 'ws'
 
-type PlayerRow = {
+type PlayerRow = Player & {
   connection: WebSocket
-  status: PlayerStatus
-  hand: Hand
 }
 
 export type PlayerState = { uuid: PlayerUUID; row: PlayerRow }
@@ -26,6 +27,7 @@ export async function addConnectedPlayer(
     const playerState: PlayerState = {
       uuid: playerUUID,
       row: {
+        uuid: playerUUID,
         status: 'connected',
         connection,
         hand: [],
