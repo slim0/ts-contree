@@ -13,6 +13,7 @@ type PartyRow = {
   status: PartyStatus
   folds: Array<Fold>
   indexCurrentPlayer: number
+  nullBidInARow: number
 }
 
 export type PartyState = { uuid: PartyUUID; row: PartyRow }
@@ -87,6 +88,7 @@ export async function createParty(gameUUID: GameUUID): Promise<PartyState> {
         status: 'start',
         folds: [],
         indexCurrentPlayer: 0,
+        nullBidInARow: 0,
       },
     }
     partiesState.set(partyState.uuid, partyState.row)
@@ -105,6 +107,32 @@ export async function shiftIndexCurrentPlayer(
     partiesState.set(partyUUID, {
       ...party!,
       indexCurrentPlayer: (party!.indexCurrentPlayer + 1) % 4,
+    })
+  } finally {
+    release()
+  }
+}
+
+export async function shiftNullBidInARow(partyUUID: PartyUUID): Promise<void> {
+  const release = await mutex.acquire()
+  try {
+    const party = partiesState.get(partyUUID)
+    partiesState.set(partyUUID, {
+      ...party!,
+      nullBidInARow: party!.nullBidInARow + 1,
+    })
+  } finally {
+    release()
+  }
+}
+
+export async function resetNullBidInARow(partyUUID: PartyUUID): Promise<void> {
+  const release = await mutex.acquire()
+  try {
+    const party = partiesState.get(partyUUID)
+    partiesState.set(partyUUID, {
+      ...party!,
+      nullBidInARow: 0,
     })
   } finally {
     release()

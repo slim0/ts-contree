@@ -126,6 +126,9 @@ describe('WebSocket Server', () => {
     expect(
       player1GameStartedMessage.data.game.currentParty.indexCurrentPlayer,
     ).toBe(0)
+    expect(player1GameStartedMessage.data.game.currentParty.nullBidInARow).toBe(
+      0,
+    )
     expect(player1GameStartedMessage.data.game.currentParty.status).toBe(
       'start',
     )
@@ -209,6 +212,7 @@ describe('WebSocket Server', () => {
       stateNotFoundErrorMessageSchema,
     )
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(0)
 
     // Test player 2 trying to play before player 1
     const wrongBidMessage2: BidMessage = {
@@ -224,6 +228,7 @@ describe('WebSocket Server', () => {
     player2Connection.send(JSON.stringify(wrongBidMessage2))
     await player2Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(0)
 
     // Player 1 decide not to bet
     const bidMessageNotBet: BidMessage = {
@@ -245,6 +250,7 @@ describe('WebSocket Server', () => {
 
     expect(nullBidFromPlayer1.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(1)
     expect(nullBidFromPlayer1).toStrictEqual(nullBidFromPlayer1ToPlayer2)
     expect(nullBidFromPlayer1).toStrictEqual(nullBidFromPlayer1ToPlayer3)
     expect(nullBidFromPlayer1).toStrictEqual(nullBidFromPlayer1ToPlayer4)
@@ -253,11 +259,13 @@ describe('WebSocket Server', () => {
     player1Connection.send(JSON.stringify(wrongBidMessage2))
     await player1Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(1)
 
     // Test player 3 trying to play instead of player 2
     player3Connection.send(JSON.stringify(wrongBidMessage2))
     await player3Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(1)
 
     player1Connection.clearMessages()
     player2Connection.clearMessages()
@@ -275,8 +283,8 @@ describe('WebSocket Server', () => {
     const nullBidFromPlayer2ToPlayer4 =
       await player2Connection.waitForMessageSchema(newBidMessageSchema)
     expect(nullBidFromPlayer2.data.bet).toBeNull
-    console.log('La')
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(2)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(2)
     expect(nullBidFromPlayer2).toStrictEqual(nullBidFromPlayer2ToPlayer2)
     expect(nullBidFromPlayer2).toStrictEqual(nullBidFromPlayer2ToPlayer3)
     expect(nullBidFromPlayer2).toStrictEqual(nullBidFromPlayer2ToPlayer4)
@@ -298,6 +306,7 @@ describe('WebSocket Server', () => {
       await player2Connection.waitForMessageSchema(newBidMessageSchema)
     expect(nullBidFromPlayer3.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(3)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(3)
     expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer2)
     expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer3)
     expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer4)
@@ -319,6 +328,7 @@ describe('WebSocket Server', () => {
       await player2Connection.waitForMessageSchema(newBidMessageSchema)
     expect(nullBidFromPlayer4.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
+    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(4)
     expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer2)
     expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer3)
     expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer4)

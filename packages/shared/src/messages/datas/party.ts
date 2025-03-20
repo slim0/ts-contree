@@ -16,6 +16,7 @@ export const partySchema = Schema.Struct({
   folds: Schema.Array(foldSchema),
   status: partyStatusSchema,
   indexCurrentPlayer: Schema.Number,
+  nullBidInARow: Schema.Number,
 });
 
 export type Party = typeof partySchema.Type;
