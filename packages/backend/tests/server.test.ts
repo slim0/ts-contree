@@ -302,6 +302,27 @@ describe('WebSocket Server', () => {
     expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer3)
     expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer4)
 
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
+    // Player 3 decide not to bet
+    player4Connection.send(JSON.stringify(bidMessageNotBet))
+    const nullBidFromPlayer4 =
+      await player4Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer4ToPlayer2 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer4ToPlayer3 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer4ToPlayer4 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(nullBidFromPlayer4.data.bet).toBeNull
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
+    expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer2)
+    expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer3)
+    expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer4)
+
     // Close connections
     player1Connection.close()
     player2Connection.close()

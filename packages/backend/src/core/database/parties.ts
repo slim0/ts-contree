@@ -104,7 +104,7 @@ export async function shiftIndexCurrentPlayer(
     const party = partiesState.get(partyUUID)
     partiesState.set(partyUUID, {
       ...party!,
-      indexCurrentPlayer: party!.indexCurrentPlayer + (1 % 4),
+      indexCurrentPlayer: (party!.indexCurrentPlayer + 1) % 4,
     })
   } finally {
     release()
