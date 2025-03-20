@@ -137,13 +137,13 @@ describe('WebSocket Server', () => {
       player1.uuid,
     )
     expect(player1GameStartedMessage.data.game.teamA.player2.uuid).toBe(
-      player2.uuid,
+      player3.uuid,
     )
 
     expect(player1GameStartedMessage.data.game.teamB.score).toBe(0)
     expect(player1GameStartedMessage.data.game.teamB.name).toBe('Black Mamba')
     expect(player1GameStartedMessage.data.game.teamB.player1.uuid).toBe(
-      player3.uuid,
+      player2.uuid,
     )
     expect(player1GameStartedMessage.data.game.teamB.player2.uuid).toBe(
       player4.uuid,
@@ -237,6 +237,20 @@ describe('WebSocket Server', () => {
     const receivedNullBid =
       await player1Connection.waitForMessageSchema(newBidMessageSchema)
     expect(receivedNullBid.data.bet).toBeNull
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+
+    // Test player 1 trying to play instead of player 2
+    player1Connection.send(JSON.stringify(wrongBidMessage2))
+    await player1Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+
+    // Test player 3 trying to play instead of player 2
+    player3Connection.send(JSON.stringify(wrongBidMessage2))
+    await player3Connection.waitForMessageSchema(
+      notYourTurnErrorMessageSchema,
+      false,
+      true,
+    )
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
 
     // Close connections

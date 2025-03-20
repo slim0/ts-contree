@@ -51,12 +51,12 @@ function initializeGame(
     Effect.Do,
     Effect.bind('teamA', () =>
       Effect.promise(() =>
-        createTeam('Red Devil', players[0].uuid, players[1].uuid),
+        createTeam('Red Devil', players[0].uuid, players[2].uuid),
       ),
     ),
     Effect.bind('teamB', () =>
       Effect.promise(() =>
-        createTeam('Black Mamba', players[2].uuid, players[3].uuid),
+        createTeam('Black Mamba', players[1].uuid, players[3].uuid),
       ),
     ),
     Effect.bind('game', ({ teamA, teamB }) =>
