@@ -234,10 +234,20 @@ describe('WebSocket Server', () => {
       },
     }
     player1Connection.send(JSON.stringify(bidMessageNotBet))
-    const receivedNullBid =
+    const nullBidFromPlayer1 =
       await player1Connection.waitForMessageSchema(newBidMessageSchema)
-    expect(receivedNullBid.data.bet).toBeNull
+    const nullBidFromPlayer1ToPlayer2 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer1ToPlayer3 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer1ToPlayer4 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+
+    expect(nullBidFromPlayer1.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+    expect(nullBidFromPlayer1).toStrictEqual(nullBidFromPlayer1ToPlayer2)
+    expect(nullBidFromPlayer1).toStrictEqual(nullBidFromPlayer1ToPlayer3)
+    expect(nullBidFromPlayer1).toStrictEqual(nullBidFromPlayer1ToPlayer4)
 
     // Test player 1 trying to play instead of player 2
     player1Connection.send(JSON.stringify(wrongBidMessage2))
@@ -246,12 +256,51 @@ describe('WebSocket Server', () => {
 
     // Test player 3 trying to play instead of player 2
     player3Connection.send(JSON.stringify(wrongBidMessage2))
-    await player3Connection.waitForMessageSchema(
-      notYourTurnErrorMessageSchema,
-      false,
-      true,
-    )
+    await player3Connection.waitForMessageSchema(notYourTurnErrorMessageSchema)
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
+    // Player 2 decide not to bet
+    player2Connection.send(JSON.stringify(bidMessageNotBet))
+    const nullBidFromPlayer2 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer2ToPlayer2 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer2ToPlayer3 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer2ToPlayer4 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(nullBidFromPlayer2.data.bet).toBeNull
+    console.log('La')
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(2)
+    expect(nullBidFromPlayer2).toStrictEqual(nullBidFromPlayer2ToPlayer2)
+    expect(nullBidFromPlayer2).toStrictEqual(nullBidFromPlayer2ToPlayer3)
+    expect(nullBidFromPlayer2).toStrictEqual(nullBidFromPlayer2ToPlayer4)
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
+    // Player 3 decide not to bet
+    player3Connection.send(JSON.stringify(bidMessageNotBet))
+    const nullBidFromPlayer3 =
+      await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer3ToPlayer2 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer3ToPlayer3 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const nullBidFromPlayer3ToPlayer4 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(nullBidFromPlayer3.data.bet).toBeNull
+    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(3)
+    expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer2)
+    expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer3)
+    expect(nullBidFromPlayer3).toStrictEqual(nullBidFromPlayer3ToPlayer4)
 
     // Close connections
     player1Connection.close()

@@ -90,9 +90,11 @@ export class TestWebSocket extends WebSocket {
     debug?: boolean,
     timeout: number = 1000,
   ): A | Promise<A> {
+    debug && console.log(this.#messages)
     const alreadyMatchingMessage =
       this.#messageMatchesSchemaAlreadyArrived(messageSchema)
     if (includeExistingMessages && alreadyMatchingMessage !== undefined) {
+      debug && console.log('includeExistingMessages')
       return Schema.decodeUnknownSync(messageSchema)(
         JSON.parse(alreadyMatchingMessage),
       )

@@ -15,6 +15,7 @@ import {
   getCurrentPlayer,
   getPartyStateEffect,
   getPlayers,
+  partiesState,
   PartyState,
   shiftIndexCurrentPlayer,
 } from '../core/database/parties'
@@ -100,6 +101,9 @@ function onPlayerDecidedNotToBet(
 ) {
   return pipe(
     Effect.promise(() => shiftIndexCurrentPlayer(partyState.uuid)),
+    Effect.tap(() =>
+      Effect.log(partiesState.get(partyState.uuid)?.indexCurrentPlayer),
+    ),
     Effect.andThen(() => getPlayers(teamA_State.row, teamB_State.row)),
     Effect.andThen((playerUUIDs) =>
       pipe(
@@ -196,6 +200,13 @@ export function treatBidMessage(
 > {
   return pipe(
     retrieveStates(bidMessage.data.partyUUID),
+    Effect.tap(() =>
+      Effect.log(
+        'treatBidMessage',
+        'connectedPlayerState uuid',
+        connectedPlayerState.uuid,
+      ),
+    ),
     Effect.andThen((states) =>
       Effect.if(bidMessage.data.bet !== null, {
         onTrue: () =>
