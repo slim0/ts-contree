@@ -99,7 +99,7 @@ function onPlayerDecidedNotToBet(
   partyState: PartyState,
   teamA_State: TeamState,
   teamB_State: TeamState,
-) {
+): Effect.Effect<Array<ServerResponse<NewBidMessage>>> {
   return pipe(
     Effect.all([
       Effect.promise(() => shiftIndexCurrentPlayer(partyState.uuid)),
