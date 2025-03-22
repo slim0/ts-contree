@@ -197,32 +197,13 @@ function onPlayerDecidedNotToBet(
 }
 
 function onPlayerDecidedToBet(
-  connectedPlayerState: PlayerState,
   bet: Bet,
   states: onBidMessageStates,
-): Effect.Effect<
-  Array<ServerResponse<NewBidMessage>>,
-  PermissionErrorMessage | NotYourTurnErrorMessage
-> {
+): Effect.Effect<Array<ServerResponse<NewBidMessage>>> {
   return pipe(
     Effect.Do,
     Effect.bind('playerUUIDs', () =>
       getPlayers(states.teamA_State.row, states.teamB_State.row),
-    ),
-    Effect.tap(() =>
-      userBelongsToParty(
-        connectedPlayerState.uuid,
-        states.teamA_State,
-        states.teamB_State,
-      ),
-    ),
-    Effect.tap(() =>
-      userIsTheCurrentPlayer(
-        connectedPlayerState.uuid,
-        states.partyState,
-        states.teamA_State,
-        states.teamB_State,
-      ),
     ),
     Effect.bind('bidState', () =>
       Effect.promise(() =>
@@ -263,6 +244,28 @@ function onPlayerDecidedToBet(
   )
 }
 
+function checkUserPermission(
+  connectedPlayerState: PlayerState,
+  states: onBidMessageStates,
+): Effect.Effect<
+  [void, void],
+  PermissionErrorMessage | NotYourTurnErrorMessage
+> {
+  return Effect.all([
+    userBelongsToParty(
+      connectedPlayerState.uuid,
+      states.teamA_State,
+      states.teamB_State,
+    ),
+    userIsTheCurrentPlayer(
+      connectedPlayerState.uuid,
+      states.partyState,
+      states.teamA_State,
+      states.teamB_State,
+    ),
+  ])
+}
+
 export function treatBidMessage(
   bidMessage: BidMessage,
   connectedPlayerState: PlayerState,
@@ -276,14 +279,10 @@ export function treatBidMessage(
   return pipe(
     verifyPlayerStatus(connectedPlayerState, ['playing']),
     Effect.andThen(() => retrieveStates(bidMessage.data.partyUUID)),
+    Effect.tap((states) => checkUserPermission(connectedPlayerState, states)),
     Effect.andThen((states) =>
       Effect.if(bidMessage.data.bet !== null, {
-        onTrue: () =>
-          onPlayerDecidedToBet(
-            connectedPlayerState,
-            bidMessage.data.bet!,
-            states,
-          ),
+        onTrue: () => onPlayerDecidedToBet(bidMessage.data.bet!, states),
         onFalse: () =>
           onPlayerDecidedNotToBet(
             states.partyState,
