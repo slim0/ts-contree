@@ -28,8 +28,7 @@ function verifyPlayerStatus(
 export function onPlayGameMessage(
   connectedPlayerState: PlayerState,
 ): Effect.Effect<
-  | Array<ServerResponse<WaitingForGameMessage>>
-  | Array<ServerResponse<GameStartedMessage>>,
+  Array<ServerResponse<WaitingForGameMessage | GameStartedMessage>>,
   PlayerStatusErrorMessage
 > {
   return pipe(

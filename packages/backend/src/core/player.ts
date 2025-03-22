@@ -5,6 +5,7 @@ import {
   playerMessageSchema,
 } from 'shared/src/messages/player/playerMessages'
 import {
+  EndOfPartyMessage,
   GameStartedMessage,
   NewBidMessage,
   NotImplementedErrorMessage,
@@ -26,10 +27,15 @@ function treatPlayerMessage(
   connectedPlayerState: PlayerState,
   playerEvent: PlayerMessage,
 ): Effect.Effect<
-  | Array<ServerResponse<PongMessage>>
-  | Array<ServerResponse<WaitingForGameMessage>>
-  | Array<ServerResponse<GameStartedMessage>>
-  | Array<ServerResponse<NewBidMessage>>,
+  Array<
+    ServerResponse<
+      | PongMessage
+      | WaitingForGameMessage
+      | GameStartedMessage
+      | NewBidMessage
+      | EndOfPartyMessage
+    >
+  >,
   | PlayerStatusErrorMessage
   | NotImplementedErrorMessage
   | PermissionErrorMessage
@@ -79,10 +85,15 @@ export function processPlayerMessage(
   message: RawData,
   connectedPlayerState: PlayerState,
 ): Effect.Effect<
-  | Array<ServerResponse<PongMessage>>
-  | Array<ServerResponse<WaitingForGameMessage>>
-  | Array<ServerResponse<GameStartedMessage>>
-  | Array<ServerResponse<NewBidMessage>>,
+  Array<
+    ServerResponse<
+      | PongMessage
+      | WaitingForGameMessage
+      | GameStartedMessage
+      | NewBidMessage
+      | EndOfPartyMessage
+    >
+  >,
   | UnparsablePlayerErrorMessage
   | PlayerStatusErrorMessage
   | NotImplementedErrorMessage
