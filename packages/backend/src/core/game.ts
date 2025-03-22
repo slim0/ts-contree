@@ -114,7 +114,7 @@ export function gameStartedResponses(
               game: initializedGameStates.game.row,
               teamA: initializedGameStates.teamA.row,
               teamB: initializedGameStates.teamB.row,
-              currentParty: initializedGameStates.party.row,
+              party: initializedGameStates.party.row,
               hand: distributedCards[index],
             },
           },

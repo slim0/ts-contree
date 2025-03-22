@@ -5,9 +5,9 @@ import {
   playerMessageSchema,
 } from 'shared/src/messages/player/playerMessages'
 import {
-  EndOfPartyMessage,
   GameStartedMessage,
   NewBidMessage,
+  NewPartyMessage,
   NotImplementedErrorMessage,
   NotYourTurnErrorMessage,
   PermissionErrorMessage,
@@ -33,7 +33,7 @@ function treatPlayerMessage(
       | WaitingForGameMessage
       | GameStartedMessage
       | NewBidMessage
-      | EndOfPartyMessage
+      | NewPartyMessage
     >
   >,
   | PlayerStatusErrorMessage
@@ -91,7 +91,7 @@ export function processPlayerMessage(
       | WaitingForGameMessage
       | GameStartedMessage
       | NewBidMessage
-      | EndOfPartyMessage
+      | NewPartyMessage
     >
   >,
   | UnparsablePlayerErrorMessage

@@ -4,16 +4,16 @@ import {
   deckOf32Cards,
   uniqueNameFromCard,
 } from 'shared/src/messages/datas/cards'
-import { PartyUUID } from 'shared/src/messages/datas/party'
+import { Party, PartyUUID } from 'shared/src/messages/datas/party'
 import {
   BidMessage,
   PingMessage,
   PlayGameMessage,
 } from 'shared/src/messages/player/playerMessages'
 import {
-  endOfPartyMessageSchema,
   gameStartedMessageSchema,
   newBidMessageSchema,
+  newPartyMessageSchema,
   notYourTurnErrorMessageSchema,
   playerConnectedMessageSchema,
   playerStatusErrorMessageSchema,
@@ -121,12 +121,7 @@ describe('WebSocket Server', () => {
     const player1GameStartedMessage =
       await player1Connection.waitForMessageSchema(gameStartedMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    expect(player1GameStartedMessage.data.currentParty.folds.length).toBe(0)
-    expect(player1GameStartedMessage.data.currentParty.indexCurrentPlayer).toBe(
-      0,
-    )
-    expect(player1GameStartedMessage.data.currentParty.nullBidInARow).toBe(0)
-    expect(player1GameStartedMessage.data.currentParty.status).toBe('start')
+    testPartyIsNew(player1GameStartedMessage.data.party)
 
     expect(player1GameStartedMessage.data.game.status).toBe('start')
     expect(player1GameStartedMessage.data.teamA.score).toBe(0)
@@ -181,7 +176,7 @@ describe('WebSocket Server', () => {
     await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
 
-    const partyUUID = player1GameStartedMessage.data.currentParty.uuid
+    const partyUUID = player1GameStartedMessage.data.party.uuid
 
     // Test sending wrong partyUUID
     const wrongBidMessage: BidMessage = {
@@ -305,12 +300,23 @@ describe('WebSocket Server', () => {
 
     // Player 4 decide not to bet
     player4Connection.send(JSON.stringify(bidMessageNotBet))
-    await player4Connection.waitForMessageSchema(endOfPartyMessageSchema)
-    await player1Connection.waitForMessageSchema(endOfPartyMessageSchema)
-    await player2Connection.waitForMessageSchema(endOfPartyMessageSchema)
-    await player3Connection.waitForMessageSchema(endOfPartyMessageSchema)
-    expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
-    expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(4)
+    const newPartyMessagePlayer4 = await player4Connection.waitForMessageSchema(
+      newPartyMessageSchema,
+    )
+    const newPartyMessagePlayer1 = await player1Connection.waitForMessageSchema(
+      newPartyMessageSchema,
+    )
+    const newPartyMessagePlayer2 = await player2Connection.waitForMessageSchema(
+      newPartyMessageSchema,
+    )
+    const newPartyMessagePlayer3 = await player3Connection.waitForMessageSchema(
+      newPartyMessageSchema,
+    )
+    expect(partiesState.get(partyUUID)).toBe(undefined)
+    testPartyIsNew(newPartyMessagePlayer4.data.party)
+    expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer1)
+    expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer2)
+    expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer3)
 
     // Close connections
     player1Connection.close()
@@ -333,3 +339,10 @@ describe('WebSocket Server', () => {
     player.close()
   })
 })
+
+function testPartyIsNew(party: Party) {
+  expect(party.folds.length).toBe(0)
+  expect(party.indexCurrentPlayer).toBe(0)
+  expect(party.nullBidInARow).toBe(0)
+  expect(party.status).toBe('start')
+}

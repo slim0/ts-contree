@@ -69,6 +69,15 @@ export function getCurrentPlayer(
   )
 }
 
+export async function deleteParty(partyUUID: PartyUUID): Promise<void> {
+  const release = await mutex.acquire()
+  try {
+    partiesState.delete(partyUUID)
+  } finally {
+    release()
+  }
+}
+
 export async function createParty(gameUUID: GameUUID): Promise<PartyState> {
   const release = await mutex.acquire()
   try {
