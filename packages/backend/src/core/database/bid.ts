@@ -1,20 +1,14 @@
 import { Mutex } from 'async-mutex'
-import { BetScore, BidUUID } from 'shared/src/messages/datas/bid'
+import { BetScore, Bid, BidUUID } from 'shared/src/messages/datas/bid'
 import { Asset, PartyUUID } from 'shared/src/messages/datas/party'
 import { v4 as uuidv4 } from 'uuid'
 
-type BidRow = {
-  partyUUID: PartyUUID
-  asset: Asset
-  betScore: BetScore
-}
-
 export type BidState = {
   uuid: BidUUID
-  row: BidRow
+  row: Bid
 }
 
-type BidsState = Map<BidUUID, BidRow>
+type BidsState = Map<BidUUID, Bid>
 
 export const bidsState: BidsState = new Map()
 
@@ -29,9 +23,12 @@ export async function createBid(
   try {
     const uuid = uuidv4() as BidUUID
     const row = {
+      uuid,
       partyUUID: partyUUID,
-      asset: asset,
-      betScore: betScore,
+      bet: {
+        asset: asset,
+        betScore: betScore,
+      },
     }
     bidsState.set(uuid, row)
     return { uuid, row }

@@ -147,8 +147,7 @@ function buildNewNullBidMessages(
                 data: {
                   _tag: 'NewBidMessage' as const,
                   data: {
-                    partyUUID: partyState.uuid,
-                    bet: null,
+                    bid: null,
                   },
                 },
               }),
@@ -231,11 +230,13 @@ function onPlayerDecidedToBet(
               data: {
                 _tag: 'NewBidMessage' as const,
                 data: {
-                  partyUUID: states.partyState.uuid,
-                  bet: {
+                  bid: {
                     uuid: bidState.uuid,
-                    betScore: bidState.row.betScore,
-                    asset: bidState.row.asset,
+                    partyUUID: bidState.row.partyUUID,
+                    bet: {
+                      betScore: bidState.row.bet.betScore,
+                      asset: bidState.row.bet.asset,
+                    },
                   },
                 },
               },

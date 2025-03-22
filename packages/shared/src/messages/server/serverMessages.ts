@@ -34,7 +34,9 @@ export const gameStartedMessageSchema = Schema.Struct({
 
 export const newBidMessageSchema = Schema.Struct({
   _tag: Schema.tag("NewBidMessage"),
-  data: bidSchema,
+  data: Schema.Struct({
+    bid: Schema.NullOr(bidSchema),
+  }),
 });
 
 export const endOfPartyMessageSchema = Schema.Struct({
