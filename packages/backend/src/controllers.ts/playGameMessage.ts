@@ -1,5 +1,4 @@
 import { Effect, Option, pipe } from 'effect'
-import { PlayerStatus } from 'shared/src/messages/datas/player'
 import {
   GameStartedMessage,
   PlayerStatusErrorMessage,
@@ -8,22 +7,7 @@ import {
 import { PlayerState } from '../core/database/players'
 import { gameStartedResponses, searchForNewGame } from '../core/game'
 import { ServerResponse } from '../core/types'
-
-function verifyPlayerStatus(
-  playerState: PlayerState,
-  validPlayerStatuses: PlayerStatus[],
-): Effect.Effect<void, PlayerStatusErrorMessage> {
-  return pipe(
-    Effect.if(validPlayerStatuses.includes(playerState.row.status), {
-      onTrue: () => Effect.void,
-      onFalse: () =>
-        Effect.fail({
-          _tag: 'PlayerStatusErrorMessage' as const,
-          message: `Player with uuid=${playerState.uuid} has status '${playerState.row.status}', which is not in ${validPlayerStatuses}`,
-        }),
-    }),
-  )
-}
+import { verifyPlayerStatus } from './common'
 
 export function onPlayGameMessage(
   connectedPlayerState: PlayerState,

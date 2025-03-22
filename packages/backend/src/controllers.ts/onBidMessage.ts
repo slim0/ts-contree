@@ -8,6 +8,7 @@ import {
   NewPartyMessage,
   NotYourTurnErrorMessage,
   PermissionErrorMessage,
+  PlayerStatusErrorMessage,
   StateNotFoundErrorMessage,
 } from 'shared/src/messages/server/serverMessages'
 import { createBid } from '../core/database/bid'
@@ -26,6 +27,7 @@ import {
 import { getStatePlayer, PlayerState } from '../core/database/players'
 import { getTeamStateEffect, TeamState } from '../core/database/teams'
 import { ServerResponse } from '../core/types'
+import { verifyPlayerStatus } from './common'
 
 type onBidMessageStates = {
   partyState: PartyState
@@ -266,10 +268,14 @@ export function treatBidMessage(
   connectedPlayerState: PlayerState,
 ): Effect.Effect<
   Array<ServerResponse<NewBidMessage | NewPartyMessage>>,
-  StateNotFoundErrorMessage | PermissionErrorMessage | NotYourTurnErrorMessage
+  | PlayerStatusErrorMessage
+  | StateNotFoundErrorMessage
+  | PermissionErrorMessage
+  | NotYourTurnErrorMessage
 > {
   return pipe(
-    retrieveStates(bidMessage.data.partyUUID),
+    verifyPlayerStatus(connectedPlayerState, ['playing']),
+    Effect.andThen(() => retrieveStates(bidMessage.data.partyUUID)),
     Effect.andThen((states) =>
       Effect.if(bidMessage.data.bet !== null, {
         onTrue: () =>
