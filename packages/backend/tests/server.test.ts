@@ -318,6 +318,46 @@ describe('WebSocket Server', () => {
     expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer2)
     expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer3)
 
+    const newParty = newPartyMessagePlayer4.data.party
+
+    // test player 1 decide to bet
+    const player1BidMessage: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        partyUUID: newParty.uuid,
+        bet: {
+          asset: 'clubs',
+          betScore: 80,
+        },
+      },
+    }
+    player1Connection.send(JSON.stringify(player1BidMessage))
+    const bidMessageResponseToPlayer1 =
+      await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(bidMessageResponseToPlayer1.data.bid).not.toBeNull
+    expect(bidMessageResponseToPlayer1.data.bid?.partyUUID).toBe(newParty.uuid)
+    expect(bidMessageResponseToPlayer1.data.bid?.bet).toStrictEqual({
+      asset: 'clubs',
+      betScore: 80,
+    })
+
+    const bidMessageResponseToPlayer2 =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    const bidMessageResponseToPlayer3 =
+      await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    const bidMessageResponseToPlayer4 =
+      await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    expect(bidMessageResponseToPlayer1).toStrictEqual(
+      bidMessageResponseToPlayer2,
+    )
+    expect(bidMessageResponseToPlayer1).toStrictEqual(
+      bidMessageResponseToPlayer3,
+    )
+    expect(bidMessageResponseToPlayer1).toStrictEqual(
+      bidMessageResponseToPlayer4,
+    )
+
     // Close connections
     player1Connection.close()
     player2Connection.close()
