@@ -27,7 +27,7 @@ export function getPlayers(
   ])
 }
 
-async function getpartyState(
+export async function getPartyState(
   partyUUID: PartyUUID,
   alreadyLock: boolean = false,
 ): Promise<PartyState | undefined> {
@@ -44,7 +44,7 @@ export function getPartyStateEffect(
   partyUUID: PartyUUID,
 ): Effect.Effect<PartyState, StateNotFoundErrorMessage> {
   return pipe(
-    Effect.promise(() => getpartyState(partyUUID)),
+    Effect.promise(() => getPartyState(partyUUID)),
     Effect.filterOrFail(
       (maybePartyState) => maybePartyState !== undefined,
       () => ({
@@ -93,27 +93,33 @@ export async function createParty(gameUUID: GameUUID): Promise<PartyState> {
 
 export async function shiftIndexCurrentPlayer(
   partyUUID: PartyUUID,
-): Promise<void> {
+): Promise<number> {
   const release = await mutex.acquire()
   try {
     const party = partiesState.get(partyUUID)
+    const newIndex = (party!.indexCurrentPlayer + 1) % 4
     partiesState.set(partyUUID, {
       ...party!,
-      indexCurrentPlayer: (party!.indexCurrentPlayer + 1) % 4,
+      indexCurrentPlayer: newIndex,
     })
+    return newIndex
   } finally {
     release()
   }
 }
 
-export async function shiftNullBidInARow(partyUUID: PartyUUID): Promise<void> {
+export async function shiftNullBidInARow(
+  partyUUID: PartyUUID,
+): Promise<number> {
   const release = await mutex.acquire()
   try {
     const party = partiesState.get(partyUUID)
+    const nullBidInARow = party!.nullBidInARow + 1
     partiesState.set(partyUUID, {
       ...party!,
-      nullBidInARow: party!.nullBidInARow + 1,
+      nullBidInARow: nullBidInARow,
     })
+    return nullBidInARow
   } finally {
     release()
   }

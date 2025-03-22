@@ -11,6 +11,7 @@ import {
   PlayGameMessage,
 } from 'shared/src/messages/player/playerMessages'
 import {
+  endOfPartyMessageSchema,
   gameStartedMessageSchema,
   newBidMessageSchema,
   notYourTurnErrorMessageSchema,
@@ -230,9 +231,9 @@ describe('WebSocket Server', () => {
     const nullBidFromPlayer1ToPlayer2 =
       await player2Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer1ToPlayer3 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player3Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer1ToPlayer4 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player4Connection.waitForMessageSchema(newBidMessageSchema)
 
     expect(nullBidFromPlayer1.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(1)
@@ -263,11 +264,11 @@ describe('WebSocket Server', () => {
     const nullBidFromPlayer2 =
       await player2Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer2ToPlayer2 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player1Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer2ToPlayer3 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player3Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer2ToPlayer4 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player4Connection.waitForMessageSchema(newBidMessageSchema)
     expect(nullBidFromPlayer2.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(2)
     expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(2)
@@ -285,11 +286,11 @@ describe('WebSocket Server', () => {
     const nullBidFromPlayer3 =
       await player3Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer3ToPlayer2 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player1Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer3ToPlayer3 =
       await player2Connection.waitForMessageSchema(newBidMessageSchema)
     const nullBidFromPlayer3ToPlayer4 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+      await player4Connection.waitForMessageSchema(newBidMessageSchema)
     expect(nullBidFromPlayer3.data.bet).toBeNull
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(3)
     expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(3)
@@ -302,22 +303,14 @@ describe('WebSocket Server', () => {
     player3Connection.clearMessages()
     player4Connection.clearMessages()
 
-    // Player 3 decide not to bet
+    // Player 4 decide not to bet
     player4Connection.send(JSON.stringify(bidMessageNotBet))
-    const nullBidFromPlayer4 =
-      await player4Connection.waitForMessageSchema(newBidMessageSchema)
-    const nullBidFromPlayer4ToPlayer2 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
-    const nullBidFromPlayer4ToPlayer3 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
-    const nullBidFromPlayer4ToPlayer4 =
-      await player2Connection.waitForMessageSchema(newBidMessageSchema)
-    expect(nullBidFromPlayer4.data.bet).toBeNull
+    await player4Connection.waitForMessageSchema(endOfPartyMessageSchema)
+    await player1Connection.waitForMessageSchema(endOfPartyMessageSchema)
+    await player2Connection.waitForMessageSchema(endOfPartyMessageSchema)
+    await player3Connection.waitForMessageSchema(endOfPartyMessageSchema)
     expect(partiesState.get(partyUUID)?.indexCurrentPlayer).toBe(0)
     expect(partiesState.get(partyUUID)?.nullBidInARow).toBe(4)
-    expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer2)
-    expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer3)
-    expect(nullBidFromPlayer4).toStrictEqual(nullBidFromPlayer4ToPlayer4)
 
     // Close connections
     player1Connection.close()
