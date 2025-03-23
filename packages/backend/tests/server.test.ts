@@ -336,6 +336,7 @@ describe('WebSocket Server', () => {
       await player1Connection.waitForMessageSchema(newBidMessageSchema)
     expect(bidMessageResponseToPlayer1.data.bid).not.toBeNull
     expect(bidMessageResponseToPlayer1.data.bid?.partyUUID).toBe(newParty.uuid)
+    expect(bidMessageResponseToPlayer1.data.bid?.playerUUID).toBe(player1.uuid)
     expect(bidMessageResponseToPlayer1.data.bid?.bet).toStrictEqual({
       asset: 'clubs',
       betScore: 80,

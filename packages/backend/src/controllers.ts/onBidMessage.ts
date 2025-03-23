@@ -197,6 +197,7 @@ function onPlayerDecidedNotToBet(
 }
 
 function onPlayerDecidedToBet(
+  playerState: PlayerState,
   bet: Bet,
   states: onBidMessageStates,
 ): Effect.Effect<Array<ServerResponse<NewBidMessage>>> {
@@ -207,7 +208,12 @@ function onPlayerDecidedToBet(
     ),
     Effect.bind('bidState', () =>
       Effect.promise(() =>
-        createBid(states.partyState.uuid, bet.asset, bet.betScore),
+        createBid(
+          states.partyState.uuid,
+          playerState.uuid,
+          bet.asset,
+          bet.betScore,
+        ),
       ),
     ),
     Effect.tap(() =>
@@ -222,18 +228,11 @@ function onPlayerDecidedToBet(
           pipe(
             Effect.promise(() => getStatePlayer(playerUUID)),
             Effect.andThen((playerState) => ({
-              playerState: playerState,
+              playerState,
               data: {
                 _tag: 'NewBidMessage' as const,
                 data: {
-                  bid: {
-                    uuid: bidState.uuid,
-                    partyUUID: bidState.row.partyUUID,
-                    bet: {
-                      betScore: bidState.row.bet.betScore,
-                      asset: bidState.row.bet.asset,
-                    },
-                  },
+                  bid: bidState.row,
                 },
               },
             })),
@@ -282,7 +281,12 @@ export function treatBidMessage(
     Effect.tap((states) => checkUserPermission(connectedPlayerState, states)),
     Effect.andThen((states) =>
       Effect.if(bidMessage.data.bet !== null, {
-        onTrue: () => onPlayerDecidedToBet(bidMessage.data.bet!, states),
+        onTrue: () =>
+          onPlayerDecidedToBet(
+            connectedPlayerState,
+            bidMessage.data.bet!,
+            states,
+          ),
         onFalse: () =>
           onPlayerDecidedNotToBet(
             states.partyState,
