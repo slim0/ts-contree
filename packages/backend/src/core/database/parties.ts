@@ -87,7 +87,7 @@ export async function createParty(gameUUID: GameUUID): Promise<PartyState> {
       row: {
         uuid,
         gameUUID: gameUUID,
-        status: 'start',
+        status: 'bids',
         folds: [],
         indexCurrentPlayer: 0,
         nullBidInARow: 0,

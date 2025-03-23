@@ -6,7 +6,7 @@ import { gameUUIDSchema } from "./game";
 export const partyUUIDSchema = Schema.UUID.pipe(Schema.brand("PartyUUID"));
 export type PartyUUID = typeof partyUUIDSchema.Type;
 
-export const partyStatusSchema = Schema.Literal("start", "pending", "finish");
+export const partyStatusSchema = Schema.Literal("bids", "playing", "finish");
 export type PartyStatus = typeof partyStatusSchema.Type;
 
 export const assetSchema = colorSchema;

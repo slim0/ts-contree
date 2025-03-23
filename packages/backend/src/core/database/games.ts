@@ -56,7 +56,7 @@ export async function createGame(
       uuid,
       teamA_UUID: teamA,
       teamB_UUID: teamB,
-      status: 'start' as GameStatus,
+      status: 'playing' as GameStatus,
     }
     gamesState.set(uuid, row)
     return { uuid, row }

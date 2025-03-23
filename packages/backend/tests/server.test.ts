@@ -124,7 +124,7 @@ describe('WebSocket Server', () => {
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
     testPartyIsNew(player1PendingGameMessage.data.party)
 
-    expect(player1PendingGameMessage.data.game.status).toBe('start')
+    expect(player1PendingGameMessage.data.game.status).toBe('playing')
     expect(player1PendingGameMessage.data.teamA.score).toBe(0)
     expect(player1PendingGameMessage.data.teamA.name).toBe('Red Devil')
     expect(player1PendingGameMessage.data.teamA.player1_UUID).toBe(player1.uuid)
@@ -481,6 +481,34 @@ describe('WebSocket Server', () => {
       betPlayer3,
     )
 
+    // Player 4 decide not to bet
+    player4Connection.send(JSON.stringify(bidMessageNotBet))
+    await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    // Player 1 decide not to bet
+    player1Connection.send(JSON.stringify(bidMessageNotBet))
+    await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    // Player 2 decide not to bet
+    player2Connection.send(JSON.stringify(bidMessageNotBet))
+    await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    // // Player 3 decide not to bet
+    // player3Connection.send(JSON.stringify(bidMessageNotBet))
+    // await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    // await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    // await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    // await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
     // Close connections
     player1Connection.close()
     player2Connection.close()
@@ -507,5 +535,5 @@ function testPartyIsNew(party: Party) {
   expect(party.folds.length).toBe(0)
   expect(party.indexCurrentPlayer).toBe(0)
   expect(party.nullBidInARow).toBe(0)
-  expect(party.status).toBe('start')
+  expect(party.status).toBe('bids')
 }
