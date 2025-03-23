@@ -5,11 +5,11 @@ import {
   playerMessageSchema,
 } from 'shared/src/messages/player/playerMessages'
 import {
-  GameStartedMessage,
   NewBidMessage,
   NewPartyMessage,
   NotImplementedErrorMessage,
   NotYourTurnErrorMessage,
+  PendingGameMessage,
   PermissionErrorMessage,
   PlayerStatusErrorMessage,
   PongMessage,
@@ -31,7 +31,7 @@ function treatPlayerMessage(
     ServerResponse<
       | PongMessage
       | WaitingForGameMessage
-      | GameStartedMessage
+      | PendingGameMessage
       | NewBidMessage
       | NewPartyMessage
     >
@@ -89,7 +89,7 @@ export function processPlayerMessage(
     ServerResponse<
       | PongMessage
       | WaitingForGameMessage
-      | GameStartedMessage
+      | PendingGameMessage
       | NewBidMessage
       | NewPartyMessage
     >

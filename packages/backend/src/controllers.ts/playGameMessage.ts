@@ -1,7 +1,7 @@
 import { Effect, Match, Option, pipe } from 'effect'
 import { deckOf32Cards } from 'shared/src/messages/datas/cards'
 import {
-  GameStartedMessage,
+  PendingGameMessage,
   PlayerStatusErrorMessage,
   WaitingForGameMessage,
 } from 'shared/src/messages/server/serverMessages'
@@ -27,7 +27,7 @@ type InitializedGameStates = {
 
 function gameStartedResponses(
   initializedGameStates: InitializedGameStates,
-): Effect.Effect<Array<ServerResponse<GameStartedMessage>>> {
+): Effect.Effect<Array<ServerResponse<PendingGameMessage>>> {
   return pipe(
     distributeCards(deckOf32Cards),
     Effect.andThen((distributedCards) =>
@@ -35,7 +35,7 @@ function gameStartedResponses(
         Effect.succeed({
           playerState,
           data: {
-            _tag: 'GameStartedMessage' as const,
+            _tag: 'PendingGameMessage' as const,
             data: {
               game: initializedGameStates.game.row,
               teamA: initializedGameStates.teamA.row,
@@ -132,7 +132,7 @@ function searchForNewGame(
 export function onPlayGameMessage(
   connectedPlayerState: PlayerState,
 ): Effect.Effect<
-  Array<ServerResponse<WaitingForGameMessage | GameStartedMessage>>,
+  Array<ServerResponse<WaitingForGameMessage | PendingGameMessage>>,
   PlayerStatusErrorMessage
 > {
   return pipe(

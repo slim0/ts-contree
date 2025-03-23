@@ -21,8 +21,8 @@ export const waitingForGameMessageSchema = Schema.Struct({
   _tag: Schema.tag("WaitingForGameMessage"),
 });
 
-export const gameStartedMessageSchema = Schema.Struct({
-  _tag: Schema.tag("GameStartedMessage"),
+export const pendingGameMessageSchema = Schema.Struct({
+  _tag: Schema.tag("PendingGameMessage"),
   data: Schema.Struct({
     game: gameSchema,
     teamA: teamSchema,
@@ -46,12 +46,12 @@ export const newPartyMessageSchema = Schema.Struct({
   }),
 });
 
-export type GameStartedMessage = typeof gameStartedMessageSchema.Type;
+export type PendingGameMessage = typeof pendingGameMessageSchema.Type;
 
 const serverReponseMessageSchema = Schema.Union(
   pongMessageSchema,
   waitingForGameMessageSchema,
-  gameStartedMessageSchema,
+  pendingGameMessageSchema,
   newBidMessageSchema,
   newPartyMessageSchema,
 );

@@ -11,10 +11,10 @@ import {
   PlayGameMessage,
 } from 'shared/src/messages/player/playerMessages'
 import {
-  gameStartedMessageSchema,
   newBidMessageSchema,
   newPartyMessageSchema,
   notYourTurnErrorMessageSchema,
+  pendingGameMessageSchema,
   playerConnectedMessageSchema,
   playerStatusErrorMessageSchema,
   pongMessageSchema,
@@ -118,53 +118,53 @@ describe('WebSocket Server', () => {
 
     // Test started game
 
-    const player1GameStartedMessage =
-      await player1Connection.waitForMessageSchema(gameStartedMessageSchema)
+    const player1PendingGameMessage =
+      await player1Connection.waitForMessageSchema(pendingGameMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
-    testPartyIsNew(player1GameStartedMessage.data.party)
+    testPartyIsNew(player1PendingGameMessage.data.party)
 
-    expect(player1GameStartedMessage.data.game.status).toBe('start')
-    expect(player1GameStartedMessage.data.teamA.score).toBe(0)
-    expect(player1GameStartedMessage.data.teamA.name).toBe('Red Devil')
-    expect(player1GameStartedMessage.data.teamA.player1_UUID).toBe(player1.uuid)
-    expect(player1GameStartedMessage.data.teamA.player2_UUID).toBe(player3.uuid)
+    expect(player1PendingGameMessage.data.game.status).toBe('start')
+    expect(player1PendingGameMessage.data.teamA.score).toBe(0)
+    expect(player1PendingGameMessage.data.teamA.name).toBe('Red Devil')
+    expect(player1PendingGameMessage.data.teamA.player1_UUID).toBe(player1.uuid)
+    expect(player1PendingGameMessage.data.teamA.player2_UUID).toBe(player3.uuid)
 
-    expect(player1GameStartedMessage.data.teamB.score).toBe(0)
-    expect(player1GameStartedMessage.data.teamB.name).toBe('Black Mamba')
-    expect(player1GameStartedMessage.data.teamB.player1_UUID).toBe(player2.uuid)
-    expect(player1GameStartedMessage.data.teamB.player2_UUID).toBe(player4.uuid)
-    expect(player1GameStartedMessage.data.hand.length).toBe(8)
+    expect(player1PendingGameMessage.data.teamB.score).toBe(0)
+    expect(player1PendingGameMessage.data.teamB.name).toBe('Black Mamba')
+    expect(player1PendingGameMessage.data.teamB.player1_UUID).toBe(player2.uuid)
+    expect(player1PendingGameMessage.data.teamB.player2_UUID).toBe(player4.uuid)
+    expect(player1PendingGameMessage.data.hand.length).toBe(8)
 
-    const player2GameStartedMessage =
-      await player2Connection.waitForMessageSchema(gameStartedMessageSchema)
+    const player2PendingGameMessage =
+      await player2Connection.waitForMessageSchema(pendingGameMessageSchema)
     expect(playersState.get(player2.uuid)?.status).toBe('playing')
-    expect(player2GameStartedMessage.data.game).toStrictEqual(
-      player1GameStartedMessage.data.game,
+    expect(player2PendingGameMessage.data.game).toStrictEqual(
+      player1PendingGameMessage.data.game,
     )
-    expect(player2GameStartedMessage.data.hand.length).toBe(8)
+    expect(player2PendingGameMessage.data.hand.length).toBe(8)
 
-    const player3GameStartedMessage =
-      await player3Connection.waitForMessageSchema(gameStartedMessageSchema)
+    const player3PendingGameMessage =
+      await player3Connection.waitForMessageSchema(pendingGameMessageSchema)
     expect(playersState.get(player3.uuid)?.status).toBe('playing')
-    expect(player3GameStartedMessage.data.game).toStrictEqual(
-      player1GameStartedMessage.data.game,
+    expect(player3PendingGameMessage.data.game).toStrictEqual(
+      player1PendingGameMessage.data.game,
     )
-    expect(player3GameStartedMessage.data.hand.length).toBe(8)
+    expect(player3PendingGameMessage.data.hand.length).toBe(8)
 
-    const player4GameStartedMessage =
-      await player4Connection.waitForMessageSchema(gameStartedMessageSchema)
+    const player4PendingGameMessage =
+      await player4Connection.waitForMessageSchema(pendingGameMessageSchema)
     expect(playersState.get(player4.uuid)?.status).toBe('playing')
-    expect(player4GameStartedMessage.data.game).toStrictEqual(
-      player1GameStartedMessage.data.game,
+    expect(player4PendingGameMessage.data.game).toStrictEqual(
+      player1PendingGameMessage.data.game,
     )
-    expect(player4GameStartedMessage.data.hand.length).toBe(8)
+    expect(player4PendingGameMessage.data.hand.length).toBe(8)
 
     // Test all cards are being distributed among players
     const distributedCardsStrings = new Set(
-      player1GameStartedMessage.data.hand
-        .concat(player2GameStartedMessage.data.hand)
-        .concat(player3GameStartedMessage.data.hand)
-        .concat(player4GameStartedMessage.data.hand)
+      player1PendingGameMessage.data.hand
+        .concat(player2PendingGameMessage.data.hand)
+        .concat(player3PendingGameMessage.data.hand)
+        .concat(player4PendingGameMessage.data.hand)
         .map((card) => uniqueNameFromCard(card)),
     )
     expect(
@@ -176,7 +176,7 @@ describe('WebSocket Server', () => {
     await player1Connection.waitForMessageSchema(playerStatusErrorMessageSchema)
     expect(playersState.get(player1.uuid)?.status).toBe('playing')
 
-    const partyUUID = player1GameStartedMessage.data.party.uuid
+    const partyUUID = player1PendingGameMessage.data.party.uuid
 
     // Test sending wrong partyUUID
     const wrongBidMessage: BidMessage = {
