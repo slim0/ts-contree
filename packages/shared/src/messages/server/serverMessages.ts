@@ -86,6 +86,11 @@ export const notYourTurnErrorMessageSchema = Schema.Struct({
   message: Schema.String,
 });
 
+export const bidNotValidErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("BidNotValidErrorMessage"),
+  message: Schema.String,
+});
+
 export type UnparsablePlayerErrorMessage =
   typeof unparsablePlayerErrorMessageSchema.Type;
 
@@ -101,6 +106,7 @@ export type StateNotFoundErrorMessage =
   typeof stateNotFoundErrorMessageSchema.Type;
 
 export type NotYourTurnErrorMessage = typeof notYourTurnErrorMessageSchema.Type;
+export type BidNotValidErrorMessage = typeof bidNotValidErrorMessageSchema.Type;
 
 export const serverErrorMessageSchema = Schema.Union(
   notImplementedErrorMessageSchema,
@@ -109,6 +115,7 @@ export const serverErrorMessageSchema = Schema.Union(
   permissionErrorMessageSchema,
   stateNotFoundErrorMessageSchema,
   notYourTurnErrorMessageSchema,
+  bidNotValidErrorMessageSchema,
 );
 
 export type ServerErrorMessage = typeof serverErrorMessageSchema.Type;

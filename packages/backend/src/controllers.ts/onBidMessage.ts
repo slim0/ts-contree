@@ -5,6 +5,7 @@ import { PartyUUID } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
 import { BidMessage } from 'shared/src/messages/player/playerMessages'
 import {
+  BidNotValidErrorMessage,
   NewBidMessage,
   NotYourTurnErrorMessage,
   PendingGameMessage,
@@ -13,7 +14,11 @@ import {
   StateNotFoundErrorMessage,
 } from 'shared/src/messages/server/serverMessages'
 import { distributeCards } from '../core/cards'
-import { createBid } from '../core/database/bid'
+import {
+  BidState,
+  bidStatesFromPartyUUID,
+  createBid,
+} from '../core/database/bid'
 import { GameState, getGameStateEffect } from '../core/database/games'
 import {
   createParty,
@@ -36,6 +41,7 @@ type onBidMessageStates = {
   gameState: GameState
   teamA_State: TeamState
   teamB_State: TeamState
+  bidStates: BidState[]
 }
 
 function retrieveStates(
@@ -53,12 +59,18 @@ function retrieveStates(
     Effect.bind('teamB_State', ({ gameState }) =>
       getTeamStateEffect(gameState.row.teamB_UUID),
     ),
-    Effect.andThen(({ partyState, gameState, teamA_State, teamB_State }) => ({
-      partyState,
-      gameState,
-      teamA_State,
-      teamB_State,
-    })),
+    Effect.bind('bidStates', () =>
+      Effect.succeed(bidStatesFromPartyUUID(partyUUID)),
+    ),
+    Effect.andThen(
+      ({ partyState, gameState, teamA_State, teamB_State, bidStates }) => ({
+        partyState,
+        gameState,
+        teamA_State,
+        teamB_State,
+        bidStates,
+      }),
+    ),
   )
 }
 
@@ -245,6 +257,32 @@ function onPlayerDecidedToBet(
   )
 }
 
+function checkBidIsValid(
+  bet: Bet,
+  oldBids: BidState[],
+): Effect.Effect<void, BidNotValidErrorMessage> {
+  return Effect.if(oldBids.length === 0, {
+    onTrue: () => Effect.void,
+    onFalse: () =>
+      pipe(
+        Effect.succeed(
+          oldBids.sort((a, b) => b.row.bet.betScore - a.row.bet.betScore),
+        ),
+        Effect.andThen((oldBidsSorted) => oldBidsSorted[0]),
+        Effect.andThen((higherBid) =>
+          Effect.if(bet.betScore <= higherBid.row.bet.betScore, {
+            onTrue: () =>
+              Effect.fail({
+                _tag: 'BidNotValidErrorMessage' as const,
+                message: `Bet not valid because betScore is lower or equal than an existing Bid`,
+              }),
+            onFalse: () => Effect.void,
+          }),
+        ),
+      ),
+  })
+}
+
 function checkUserPermission(
   connectedPlayerState: PlayerState,
   states: onBidMessageStates,
@@ -276,6 +314,7 @@ export function treatBidMessage(
   | StateNotFoundErrorMessage
   | PermissionErrorMessage
   | NotYourTurnErrorMessage
+  | BidNotValidErrorMessage
 > {
   return pipe(
     verifyPlayerStatus(connectedPlayerState, ['playing']),
@@ -284,10 +323,15 @@ export function treatBidMessage(
     Effect.andThen((states) =>
       Effect.if(bidMessage.data.bet !== null, {
         onTrue: () =>
-          onPlayerDecidedToBet(
-            connectedPlayerState,
-            bidMessage.data.bet!,
-            states,
+          pipe(
+            checkBidIsValid(bidMessage.data.bet!, states.bidStates),
+            Effect.andThen(() =>
+              onPlayerDecidedToBet(
+                connectedPlayerState,
+                bidMessage.data.bet!,
+                states,
+              ),
+            ),
           ),
         onFalse: () =>
           onPlayerDecidedNotToBet(

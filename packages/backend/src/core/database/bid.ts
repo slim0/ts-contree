@@ -39,3 +39,12 @@ export async function createBid(
     release()
   }
 }
+
+export function bidStatesFromPartyUUID(partyUUID: PartyUUID): BidState[] {
+  return Array.from(bidsState)
+    .filter(([_uuid, row]) => row.partyUUID === partyUUID)
+    .map(([uuid, row]) => ({
+      uuid,
+      row,
+    }))
+}

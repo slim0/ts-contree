@@ -5,6 +5,7 @@ import {
   playerMessageSchema,
 } from 'shared/src/messages/player/playerMessages'
 import {
+  BidNotValidErrorMessage,
   NewBidMessage,
   NotImplementedErrorMessage,
   NotYourTurnErrorMessage,
@@ -36,6 +37,7 @@ function treatPlayerMessage(
   | PermissionErrorMessage
   | StateNotFoundErrorMessage
   | NotYourTurnErrorMessage
+  | BidNotValidErrorMessage
 > {
   return pipe(
     Match.type<PlayerMessage>().pipe(
@@ -91,6 +93,7 @@ export function processPlayerMessage(
   | PermissionErrorMessage
   | StateNotFoundErrorMessage
   | NotYourTurnErrorMessage
+  | BidNotValidErrorMessage
 > {
   return pipe(
     parsePlayerMessage(message),

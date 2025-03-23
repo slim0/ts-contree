@@ -90,7 +90,7 @@ export class TestWebSocket extends WebSocket {
     debug?: boolean,
     timeout: number = 1000,
   ): A | Promise<A> {
-    debug && console.log(this.#messages)
+    debug && console.log('messages', this.#messages)
     const alreadyMatchingMessage =
       this.#messageMatchesSchemaAlreadyArrived(messageSchema)
     if (includeExistingMessages && alreadyMatchingMessage !== undefined) {

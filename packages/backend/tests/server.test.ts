@@ -1,5 +1,6 @@
 import { Server } from 'node:http'
 
+import { Bet } from 'shared/src/messages/datas/bid'
 import {
   deckOf32Cards,
   uniqueNameFromCard,
@@ -11,6 +12,7 @@ import {
   PlayGameMessage,
 } from 'shared/src/messages/player/playerMessages'
 import {
+  bidNotValidErrorMessageSchema,
   newBidMessageSchema,
   notYourTurnErrorMessageSchema,
   pendingGameMessageSchema,
@@ -392,6 +394,91 @@ describe('WebSocket Server', () => {
     )
     expect(bidMessageResponseToPlayer1).toStrictEqual(
       bidMessageResponseToPlayer4,
+    )
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
+    // test player 2 decide to bet too
+    const betPlayer2: Bet = {
+      asset: 'hearts',
+      betScore: 90,
+    }
+    const player2BidMessage: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        partyUUID: newParty.uuid,
+        bet: betPlayer2,
+      },
+    }
+
+    player2Connection.send(JSON.stringify(player2BidMessage))
+    const responseAfterPlayer2DecidedToBet =
+      await player2Connection.waitForMessageSchema(newBidMessageSchema)
+
+    await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    await player3Connection.waitForMessageSchema(newBidMessageSchema)
+    await player4Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(responseAfterPlayer2DecidedToBet.data.bid?.partyUUID).toBe(
+      newParty.uuid,
+    )
+    expect(responseAfterPlayer2DecidedToBet.data.bid?.playerUUID).toBe(
+      player2.uuid,
+    )
+    expect(responseAfterPlayer2DecidedToBet.data.bid?.bet).toStrictEqual(
+      betPlayer2,
+    )
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
+    // test player 3 decide to bet too with invalid betScore
+    const invalidBetPlayer3: Bet = {
+      asset: 'clubs',
+      betScore: 80,
+    }
+    const player3InvalidBidMessage: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        partyUUID: newParty.uuid,
+        bet: invalidBetPlayer3,
+      },
+    }
+    player3Connection.send(JSON.stringify(player3InvalidBidMessage))
+    await player3Connection.waitForMessageSchema(bidNotValidErrorMessageSchema)
+
+    // test player 3 decide to bet too
+    const betPlayer3: Bet = {
+      asset: 'clubs',
+      betScore: 100,
+    }
+    const player3BidMessage: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        partyUUID: newParty.uuid,
+        bet: betPlayer3,
+      },
+    }
+    player3Connection.send(JSON.stringify(player3BidMessage))
+    const responseAfterPlayer3DecidedToBet =
+      await player3Connection.waitForMessageSchema(newBidMessageSchema)
+
+    await player1Connection.waitForMessageSchema(newBidMessageSchema)
+    await player2Connection.waitForMessageSchema(newBidMessageSchema)
+    await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    expect(responseAfterPlayer3DecidedToBet.data.bid?.partyUUID).toBe(
+      newParty.uuid,
+    )
+    expect(responseAfterPlayer3DecidedToBet.data.bid?.playerUUID).toBe(
+      player3.uuid,
+    )
+    expect(responseAfterPlayer3DecidedToBet.data.bid?.bet).toStrictEqual(
+      betPlayer3,
     )
 
     // Close connections
