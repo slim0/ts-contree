@@ -1,16 +1,18 @@
 import { Effect, pipe } from 'effect'
 import { Bet } from 'shared/src/messages/datas/bid'
+import { deckOf32Cards } from 'shared/src/messages/datas/cards'
 import { PartyUUID } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
 import { BidMessage } from 'shared/src/messages/player/playerMessages'
 import {
   NewBidMessage,
-  NewPartyMessage,
   NotYourTurnErrorMessage,
+  PendingGameMessage,
   PermissionErrorMessage,
   PlayerStatusErrorMessage,
   StateNotFoundErrorMessage,
 } from 'shared/src/messages/server/serverMessages'
+import { distributeCards } from '../core/cards'
 import { createBid } from '../core/database/bid'
 import { GameState, getGameStateEffect } from '../core/database/games'
 import {
@@ -27,7 +29,7 @@ import {
 import { getStatePlayer, PlayerState } from '../core/database/players'
 import { getTeamStateEffect, TeamState } from '../core/database/teams'
 import { ServerResponse } from '../core/types'
-import { verifyPlayerStatus } from './common'
+import { constructPendingGameMessages, verifyPlayerStatus } from './common'
 
 type onBidMessageStates = {
   partyState: PartyState
@@ -105,33 +107,35 @@ function allPlayersDecidedNotToBet(
   teamA_State: TeamState,
   teamB_State: TeamState,
   gameState: GameState,
-  partyState: PartyState,
-): Effect.Effect<Array<ServerResponse<NewPartyMessage>>> {
+  partyUUID: PartyUUID,
+): Effect.Effect<Array<ServerResponse<PendingGameMessage>>> {
   return pipe(
     Effect.Do,
-    Effect.tap(() => Effect.promise(() => deleteParty(partyState.uuid))),
+    Effect.tap(() => Effect.promise(() => deleteParty(partyUUID))),
     Effect.bind('newParty', () =>
       Effect.promise(() => createParty(gameState.uuid)),
     ),
-    Effect.bind('playerUUIDs', () =>
-      getPlayers(teamA_State.row, teamB_State.row),
-    ),
-    Effect.andThen(({ playerUUIDs, newParty }) =>
+    Effect.bind('playerStates', () =>
       pipe(
-        Effect.forEach(playerUUIDs, (playerUUID) =>
-          pipe(
-            Effect.promise(() => getStatePlayer(playerUUID)),
-            Effect.andThen((playerState) =>
-              Effect.succeed({
-                playerState: playerState,
-                data: {
-                  _tag: 'NewPartyMessage' as const,
-                  data: {
-                    party: newParty.row,
-                  },
-                },
-              }),
-            ),
+        getPlayers(teamA_State.row, teamB_State.row),
+        Effect.andThen((playerUUIDs) =>
+          Effect.forEach(playerUUIDs, (playerUUID) => {
+            return Effect.promise(() => getStatePlayer(playerUUID, false))
+          }),
+        ),
+      ),
+    ),
+    Effect.andThen(({ playerStates, newParty }) =>
+      pipe(
+        distributeCards(deckOf32Cards),
+        Effect.andThen((distributedCards) =>
+          constructPendingGameMessages(
+            gameState,
+            teamA_State,
+            teamB_State,
+            newParty,
+            playerStates,
+            distributedCards,
           ),
         ),
       ),
@@ -142,7 +146,6 @@ function allPlayersDecidedNotToBet(
 function buildNewNullBidMessages(
   teamA_State: TeamState,
   teamB_State: TeamState,
-  partyState: PartyState,
 ): Effect.Effect<Array<ServerResponse<NewBidMessage>>> {
   return pipe(
     getPlayers(teamA_State.row, teamB_State.row),
@@ -174,7 +177,7 @@ function onPlayerDecidedNotToBet(
   teamA_State: TeamState,
   teamB_State: TeamState,
   gameState: GameState,
-): Effect.Effect<Array<ServerResponse<NewBidMessage | NewPartyMessage>>> {
+): Effect.Effect<Array<ServerResponse<NewBidMessage | PendingGameMessage>>> {
   return pipe(
     Effect.all([
       Effect.promise(() => shiftIndexCurrentPlayer(partyState.uuid)),
@@ -187,10 +190,9 @@ function onPlayerDecidedNotToBet(
             teamA_State,
             teamB_State,
             gameState,
-            partyState,
+            partyState.uuid,
           ),
-        onFalse: () =>
-          buildNewNullBidMessages(teamA_State, teamB_State, partyState),
+        onFalse: () => buildNewNullBidMessages(teamA_State, teamB_State),
       }),
     ),
   )
@@ -269,7 +271,7 @@ export function treatBidMessage(
   bidMessage: BidMessage,
   connectedPlayerState: PlayerState,
 ): Effect.Effect<
-  Array<ServerResponse<NewBidMessage | NewPartyMessage>>,
+  Array<ServerResponse<NewBidMessage | PendingGameMessage>>,
   | PlayerStatusErrorMessage
   | StateNotFoundErrorMessage
   | PermissionErrorMessage

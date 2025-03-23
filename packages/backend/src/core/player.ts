@@ -6,7 +6,6 @@ import {
 } from 'shared/src/messages/player/playerMessages'
 import {
   NewBidMessage,
-  NewPartyMessage,
   NotImplementedErrorMessage,
   NotYourTurnErrorMessage,
   PendingGameMessage,
@@ -29,11 +28,7 @@ function treatPlayerMessage(
 ): Effect.Effect<
   Array<
     ServerResponse<
-      | PongMessage
-      | WaitingForGameMessage
-      | PendingGameMessage
-      | NewBidMessage
-      | NewPartyMessage
+      PongMessage | WaitingForGameMessage | PendingGameMessage | NewBidMessage
     >
   >,
   | PlayerStatusErrorMessage
@@ -87,11 +82,7 @@ export function processPlayerMessage(
 ): Effect.Effect<
   Array<
     ServerResponse<
-      | PongMessage
-      | WaitingForGameMessage
-      | PendingGameMessage
-      | NewBidMessage
-      | NewPartyMessage
+      PongMessage | WaitingForGameMessage | PendingGameMessage | NewBidMessage
     >
   >,
   | UnparsablePlayerErrorMessage

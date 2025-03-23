@@ -6,49 +6,16 @@ import {
   WaitingForGameMessage,
 } from 'shared/src/messages/server/serverMessages'
 import { distributeCards } from '../core/cards'
-import { GameState, createGame } from '../core/database/games'
-import { PartyState, createParty } from '../core/database/parties'
+import { createGame, GameState } from '../core/database/games'
+import { createParty, PartyState } from '../core/database/parties'
 import {
   PlayerState,
   retrieveWaitingPlayers,
   setPlayerStatus,
 } from '../core/database/players'
-import { TeamState, createTeam } from '../core/database/teams'
+import { createTeam, TeamState } from '../core/database/teams'
 import { ServerResponse } from '../core/types'
-import { verifyPlayerStatus } from './common'
-
-type InitializedGameStates = {
-  game: GameState
-  teamA: TeamState
-  teamB: TeamState
-  party: PartyState
-  players: PlayerState[]
-}
-
-function gameStartedResponses(
-  initializedGameStates: InitializedGameStates,
-): Effect.Effect<Array<ServerResponse<PendingGameMessage>>> {
-  return pipe(
-    distributeCards(deckOf32Cards),
-    Effect.andThen((distributedCards) =>
-      Effect.forEach(initializedGameStates.players, (playerState, index) =>
-        Effect.succeed({
-          playerState,
-          data: {
-            _tag: 'PendingGameMessage' as const,
-            data: {
-              game: initializedGameStates.game.row,
-              teamA: initializedGameStates.teamA.row,
-              teamB: initializedGameStates.teamB.row,
-              party: initializedGameStates.party.row,
-              hand: distributedCards[index],
-            },
-          },
-        }),
-      ),
-    ),
-  )
-}
+import { constructPendingGameMessages, verifyPlayerStatus } from './common'
 
 function searchAvailablePlayers(
   connectedPlayerState: PlayerState,
@@ -71,7 +38,7 @@ function searchAvailablePlayers(
               setPlayerStatus(connectedPlayerState.uuid, 'playing'),
             ),
             Effect.andThen(() =>
-              Effect.succeed(Option.some([...players, connectedPlayerState!])),
+              Effect.succeed(Option.some([...players, connectedPlayerState])),
             ),
           ),
         ),
@@ -80,9 +47,13 @@ function searchAvailablePlayers(
   )
 }
 
-function initializeGame(
-  players: PlayerState[],
-): Effect.Effect<InitializedGameStates> {
+function initializeGame(players: PlayerState[]): Effect.Effect<{
+  game: GameState
+  teamA: TeamState
+  teamB: TeamState
+  party: PartyState
+  players: PlayerState[]
+}> {
   return pipe(
     Effect.Do,
     Effect.bind('teamA', () =>
@@ -111,24 +82,6 @@ function initializeGame(
   )
 }
 
-function searchForNewGame(
-  connectedPlayerState: PlayerState,
-): Effect.Effect<Option.Option<InitializedGameStates>> {
-  return pipe(
-    searchAvailablePlayers(connectedPlayerState),
-    Effect.andThen((maybePlayers) =>
-      Option.match(maybePlayers, {
-        onSome: (playersState) =>
-          pipe(
-            initializeGame(playersState),
-            Effect.andThen((states) => Effect.succeed(Option.some(states))),
-          ),
-        onNone: () => Effect.succeed(Option.none()),
-      }),
-    ),
-  )
-}
-
 export function onPlayGameMessage(
   connectedPlayerState: PlayerState,
 ): Effect.Effect<
@@ -137,11 +90,28 @@ export function onPlayGameMessage(
 > {
   return pipe(
     verifyPlayerStatus(connectedPlayerState, ['connected']),
-    Effect.andThen(() => searchForNewGame(connectedPlayerState)),
-    Effect.andThen((maybeInitializedGameStates) =>
-      Option.match(maybeInitializedGameStates, {
-        onSome: (initializedGameStates) =>
-          gameStartedResponses(initializedGameStates),
+    Effect.andThen(() => searchAvailablePlayers(connectedPlayerState)),
+    Effect.andThen((maybePlayers) =>
+      Option.match(maybePlayers, {
+        onSome: (playersState) =>
+          pipe(
+            initializeGame(playersState),
+            Effect.andThen(({ game, teamA, teamB, party, players }) =>
+              pipe(
+                distributeCards(deckOf32Cards),
+                Effect.andThen((distributedCards) =>
+                  constructPendingGameMessages(
+                    game,
+                    teamA,
+                    teamB,
+                    party,
+                    players,
+                    distributedCards,
+                  ),
+                ),
+              ),
+            ),
+          ),
         onNone: () =>
           Effect.succeed([
             {

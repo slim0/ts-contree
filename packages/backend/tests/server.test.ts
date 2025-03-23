@@ -12,7 +12,6 @@ import {
 } from 'shared/src/messages/player/playerMessages'
 import {
   newBidMessageSchema,
-  newPartyMessageSchema,
   notYourTurnErrorMessageSchema,
   pendingGameMessageSchema,
   playerConnectedMessageSchema,
@@ -301,22 +300,58 @@ describe('WebSocket Server', () => {
     // Player 4 decide not to bet
     player4Connection.send(JSON.stringify(bidMessageNotBet))
     const newPartyMessagePlayer4 = await player4Connection.waitForMessageSchema(
-      newPartyMessageSchema,
+      pendingGameMessageSchema,
     )
     const newPartyMessagePlayer1 = await player1Connection.waitForMessageSchema(
-      newPartyMessageSchema,
+      pendingGameMessageSchema,
     )
     const newPartyMessagePlayer2 = await player2Connection.waitForMessageSchema(
-      newPartyMessageSchema,
+      pendingGameMessageSchema,
     )
     const newPartyMessagePlayer3 = await player3Connection.waitForMessageSchema(
-      newPartyMessageSchema,
+      pendingGameMessageSchema,
     )
     expect(partiesState.get(partyUUID)).toBe(undefined)
     testPartyIsNew(newPartyMessagePlayer4.data.party)
-    expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer1)
-    expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer2)
-    expect(newPartyMessagePlayer4).toStrictEqual(newPartyMessagePlayer3)
+
+    expect(newPartyMessagePlayer4.data.game).toStrictEqual(
+      newPartyMessagePlayer1.data.game,
+    )
+    expect(newPartyMessagePlayer4.data.party).toStrictEqual(
+      newPartyMessagePlayer1.data.party,
+    )
+    expect(newPartyMessagePlayer4.data.teamA).toStrictEqual(
+      newPartyMessagePlayer1.data.teamA,
+    )
+    expect(newPartyMessagePlayer4.data.teamB).toStrictEqual(
+      newPartyMessagePlayer1.data.teamB,
+    )
+
+    expect(newPartyMessagePlayer4.data.game).toStrictEqual(
+      newPartyMessagePlayer2.data.game,
+    )
+    expect(newPartyMessagePlayer4.data.party).toStrictEqual(
+      newPartyMessagePlayer2.data.party,
+    )
+    expect(newPartyMessagePlayer4.data.teamA).toStrictEqual(
+      newPartyMessagePlayer2.data.teamA,
+    )
+    expect(newPartyMessagePlayer4.data.teamB).toStrictEqual(
+      newPartyMessagePlayer2.data.teamB,
+    )
+
+    expect(newPartyMessagePlayer4.data.game).toStrictEqual(
+      newPartyMessagePlayer3.data.game,
+    )
+    expect(newPartyMessagePlayer4.data.party).toStrictEqual(
+      newPartyMessagePlayer3.data.party,
+    )
+    expect(newPartyMessagePlayer4.data.teamA).toStrictEqual(
+      newPartyMessagePlayer3.data.teamA,
+    )
+    expect(newPartyMessagePlayer4.data.teamB).toStrictEqual(
+      newPartyMessagePlayer3.data.teamB,
+    )
 
     const newParty = newPartyMessagePlayer4.data.party
 

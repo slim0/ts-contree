@@ -39,13 +39,6 @@ export const newBidMessageSchema = Schema.Struct({
   }),
 });
 
-export const newPartyMessageSchema = Schema.Struct({
-  _tag: Schema.tag("NewPartyMessage"),
-  data: Schema.Struct({
-    party: partySchema,
-  }),
-});
-
 export type PendingGameMessage = typeof pendingGameMessageSchema.Type;
 
 const serverReponseMessageSchema = Schema.Union(
@@ -53,14 +46,12 @@ const serverReponseMessageSchema = Schema.Union(
   waitingForGameMessageSchema,
   pendingGameMessageSchema,
   newBidMessageSchema,
-  newPartyMessageSchema,
 );
 
 export type PongMessage = typeof pongMessageSchema.Type;
 export type PlayerConnectedMessage = typeof playerConnectedMessageSchema.Type;
 export type WaitingForGameMessage = typeof waitingForGameMessageSchema.Type;
 export type NewBidMessage = typeof newBidMessageSchema.Type;
-export type NewPartyMessage = typeof newPartyMessageSchema.Type;
 export type ServerMessage = typeof serverReponseMessageSchema.Type;
 
 // Error
