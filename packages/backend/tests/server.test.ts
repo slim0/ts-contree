@@ -463,6 +463,12 @@ describe('WebSocket Server', () => {
         bet: betPlayer3,
       },
     }
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
     player3Connection.send(JSON.stringify(player3BidMessage))
     const responseAfterPlayer3DecidedToBet =
       await player3Connection.waitForMessageSchema(newBidMessageSchema)
@@ -481,33 +487,53 @@ describe('WebSocket Server', () => {
       betPlayer3,
     )
 
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
+
+    const bidMessageNotBetNewParty: BidMessage = {
+      _tag: 'BidMessage',
+      data: {
+        partyUUID: newParty.uuid,
+        bet: null,
+      },
+    }
+
     // Player 4 decide not to bet
-    player4Connection.send(JSON.stringify(bidMessageNotBet))
+    player4Connection.send(JSON.stringify(bidMessageNotBetNewParty))
     await player1Connection.waitForMessageSchema(newBidMessageSchema)
     await player2Connection.waitForMessageSchema(newBidMessageSchema)
     await player3Connection.waitForMessageSchema(newBidMessageSchema)
     await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
 
     // Player 1 decide not to bet
-    player1Connection.send(JSON.stringify(bidMessageNotBet))
+    player1Connection.send(JSON.stringify(bidMessageNotBetNewParty))
     await player1Connection.waitForMessageSchema(newBidMessageSchema)
     await player2Connection.waitForMessageSchema(newBidMessageSchema)
     await player3Connection.waitForMessageSchema(newBidMessageSchema)
     await player4Connection.waitForMessageSchema(newBidMessageSchema)
+
+    player1Connection.clearMessages()
+    player2Connection.clearMessages()
+    player3Connection.clearMessages()
+    player4Connection.clearMessages()
 
     // Player 2 decide not to bet
-    player2Connection.send(JSON.stringify(bidMessageNotBet))
-    await player1Connection.waitForMessageSchema(newBidMessageSchema)
-    await player2Connection.waitForMessageSchema(newBidMessageSchema)
-    await player3Connection.waitForMessageSchema(newBidMessageSchema)
-    await player4Connection.waitForMessageSchema(newBidMessageSchema)
+    player2Connection.send(JSON.stringify(bidMessageNotBetNewParty))
+    const playingPartyResponse = await player1Connection.waitForMessageSchema(
+      pendingGameMessageSchema,
+    )
+    await player2Connection.waitForMessageSchema(pendingGameMessageSchema)
+    await player3Connection.waitForMessageSchema(pendingGameMessageSchema)
+    await player4Connection.waitForMessageSchema(pendingGameMessageSchema)
 
-    // // Player 3 decide not to bet
-    // player3Connection.send(JSON.stringify(bidMessageNotBet))
-    // await player1Connection.waitForMessageSchema(newBidMessageSchema)
-    // await player2Connection.waitForMessageSchema(newBidMessageSchema)
-    // await player3Connection.waitForMessageSchema(newBidMessageSchema)
-    // await player4Connection.waitForMessageSchema(newBidMessageSchema)
+    expect(playingPartyResponse.data.party.status).toBe('playing')
 
     // Close connections
     player1Connection.close()

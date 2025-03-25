@@ -1,7 +1,7 @@
 import { Mutex } from 'async-mutex'
 import { Effect, pipe } from 'effect'
 import { GameUUID } from 'shared/src/messages/datas/game'
-import { Party, PartyUUID } from 'shared/src/messages/datas/party'
+import { Party, PartyStatus, PartyUUID } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
 import { Team } from 'shared/src/messages/datas/team'
 import { StateNotFoundErrorMessage } from 'shared/src/messages/server/serverMessages'
@@ -35,6 +35,25 @@ export async function getPartyState(
   try {
     const partyState = partiesState.get(partyUUID)
     return partyState && { uuid: partyUUID, row: partyState }
+  } finally {
+    release && release()
+  }
+}
+
+export async function setPartyStatus(
+  partyState: PartyState,
+  partyStatus: PartyStatus,
+  alreadyLock: boolean = false,
+): Promise<PartyState> {
+  const release = alreadyLock ? null : await mutex.acquire()
+  try {
+    console.log('partyStatus=', partyStatus)
+    const updatedParty = {
+      ...partyState.row,
+      status: partyStatus,
+    }
+    partiesState.set(partyState.uuid, updatedParty)
+    return { uuid: partyState.uuid, row: updatedParty }
   } finally {
     release && release()
   }

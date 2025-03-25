@@ -1,10 +1,13 @@
 import { Mutex } from 'async-mutex'
+import { Effect, pipe } from 'effect'
 import {
   Player,
   PlayerStatus,
   PlayerUUID,
 } from 'shared/src/messages/datas/player'
 import WebSocket from 'ws'
+import { getPlayers } from './parties'
+import { TeamState } from './teams'
 
 type PlayerRow = Player & {
   connection: WebSocket
@@ -107,17 +110,16 @@ export async function retrieveWaitingPlayers(
   }
 }
 
-export async function getStatePlayers(
-  playerUUIDs: PlayerUUID[],
-): Promise<(PlayerState | undefined)[]> {
-  const release = await mutex.acquire()
-  try {
-    return await Promise.all(
-      playerUUIDs.map(
-        async (playerUUID) => await getStatePlayer(playerUUID, true),
-      ),
-    )
-  } finally {
-    release()
-  }
+export function getStatePlayers(
+  teamA_State: TeamState,
+  teamB_State: TeamState,
+) {
+  return pipe(
+    getPlayers(teamA_State.row, teamB_State.row),
+    Effect.andThen((playerUUIDs) =>
+      Effect.forEach(playerUUIDs, (playerUUID) => {
+        return Effect.promise(() => getStatePlayer(playerUUID, false))
+      }),
+    ),
+  )
 }
