@@ -1,5 +1,6 @@
 import { Mutex } from 'async-mutex'
 import { Effect, pipe } from 'effect'
+import { Fold } from 'shared/src/messages/datas/fold'
 import { GameUUID } from 'shared/src/messages/datas/game'
 import { Party, PartyStatus, PartyUUID } from 'shared/src/messages/datas/party'
 import { PlayerUUID } from 'shared/src/messages/datas/player'
@@ -47,10 +48,28 @@ export async function setPartyStatus(
 ): Promise<PartyState> {
   const release = alreadyLock ? null : await mutex.acquire()
   try {
-    console.log('partyStatus=', partyStatus)
     const updatedParty = {
       ...partyState.row,
       status: partyStatus,
+    }
+    partiesState.set(partyState.uuid, updatedParty)
+    return { uuid: partyState.uuid, row: updatedParty }
+  } finally {
+    release && release()
+  }
+}
+
+export async function updatePartyFolds(
+  partyState: PartyState,
+  folds: Fold[],
+  alreadyLock: boolean = false,
+): Promise<PartyState> {
+  const release = alreadyLock ? null : await mutex.acquire()
+  try {
+    const fold = partyState.row.folds.at(-1)
+    const updatedParty = {
+      ...partyState.row,
+      folds: folds
     }
     partiesState.set(partyState.uuid, updatedParty)
     return { uuid: partyState.uuid, row: updatedParty }

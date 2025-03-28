@@ -66,6 +66,11 @@ export const playerStatusErrorMessageSchema = Schema.Struct({
   message: Schema.String,
 });
 
+export const partyStatusErrorMessageSchema = Schema.Struct({
+  _tag: Schema.tag("PartyStatusErrorMessage"),
+  message: Schema.String,
+});
+
 export const notImplementedErrorMessageSchema = Schema.Struct({
   _tag: Schema.tag("NotImplementedErrorMessage"),
   message: Schema.String,
@@ -97,6 +102,9 @@ export type UnparsablePlayerErrorMessage =
 export type PlayerStatusErrorMessage =
   typeof playerStatusErrorMessageSchema.Type;
 
+export type PartyStatusErrorMessage =
+  typeof partyStatusErrorMessageSchema.Type;
+
 export type NotImplementedErrorMessage =
   typeof notImplementedErrorMessageSchema.Type;
 
@@ -112,6 +120,7 @@ export const serverErrorMessageSchema = Schema.Union(
   notImplementedErrorMessageSchema,
   unparsablePlayerErrorMessageSchema,
   playerStatusErrorMessageSchema,
+  partyStatusErrorMessageSchema,
   permissionErrorMessageSchema,
   stateNotFoundErrorMessageSchema,
   notYourTurnErrorMessageSchema,

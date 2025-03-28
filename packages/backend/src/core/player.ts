@@ -9,6 +9,7 @@ import {
   NewBidMessage,
   NotImplementedErrorMessage,
   NotYourTurnErrorMessage,
+  PartyStatusErrorMessage,
   PendingGameMessage,
   PermissionErrorMessage,
   PlayerStatusErrorMessage,
@@ -19,6 +20,7 @@ import {
 } from 'shared/src/messages/server/serverMessages'
 import { RawData } from 'ws'
 import { treatBidMessage as onBidMessage } from '../controllers.ts/onBidMessage'
+import { treatPlayCardMessage } from '../controllers.ts/onPlayCardMessage'
 import { onPlayGameMessage } from '../controllers.ts/playGameMessage'
 import { PlayerState } from './database/players'
 import { ServerResponse } from './types'
@@ -38,6 +40,7 @@ function treatPlayerMessage(
   | StateNotFoundErrorMessage
   | NotYourTurnErrorMessage
   | BidNotValidErrorMessage
+  | PartyStatusErrorMessage
 > {
   return pipe(
     Match.type<PlayerMessage>().pipe(
@@ -56,6 +59,9 @@ function treatPlayerMessage(
       ),
       Match.tag('BidMessage', (bidMessage) =>
         onBidMessage(bidMessage, connectedPlayerState),
+      ),
+      Match.tag('PlayCardMessage', (playCardMessage) =>
+        treatPlayCardMessage(playCardMessage, connectedPlayerState),
       ),
       Match.exhaustive,
     )(playerEvent),
@@ -94,6 +100,7 @@ export function processPlayerMessage(
   | StateNotFoundErrorMessage
   | NotYourTurnErrorMessage
   | BidNotValidErrorMessage
+  | PartyStatusErrorMessage
 > {
   return pipe(
     parsePlayerMessage(message),

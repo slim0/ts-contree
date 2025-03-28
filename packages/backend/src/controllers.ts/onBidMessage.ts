@@ -16,68 +16,28 @@ import {
 import { distributeCards } from '../core/cards'
 import {
   BidState,
-  bidStatesFromPartyUUID,
-  createBid,
+  createBid
 } from '../core/database/bid'
-import { GameState, getGameStateEffect } from '../core/database/games'
+import { GameState } from '../core/database/games'
 import {
   createParty,
   deleteParty,
   getCurrentPlayer,
-  getPartyStateEffect,
   getPlayers,
   PartyState,
   resetNullBidInARow,
   setPartyStatus,
   shiftIndexCurrentPlayer,
-  shiftNullBidInARow,
+  shiftNullBidInARow
 } from '../core/database/parties'
 import {
   getStatePlayer,
   getStatePlayers,
   PlayerState,
 } from '../core/database/players'
-import { getTeamStateEffect, TeamState } from '../core/database/teams'
+import { TeamState } from '../core/database/teams'
 import { ServerResponse } from '../core/types'
-import { constructPendingGameMessages, verifyPlayerStatus } from './common'
-
-type onBidMessageStates = {
-  partyState: PartyState
-  gameState: GameState
-  teamA_State: TeamState
-  teamB_State: TeamState
-  bidStates: BidState[]
-}
-
-function retrieveStates(
-  partyUUID: PartyUUID,
-): Effect.Effect<onBidMessageStates, StateNotFoundErrorMessage> {
-  return pipe(
-    Effect.Do,
-    Effect.bind('partyState', () => getPartyStateEffect(partyUUID)),
-    Effect.bind('gameState', ({ partyState }) =>
-      getGameStateEffect(partyState.row.gameUUID),
-    ),
-    Effect.bind('teamA_State', ({ gameState }) =>
-      getTeamStateEffect(gameState.row.teamA_UUID),
-    ),
-    Effect.bind('teamB_State', ({ gameState }) =>
-      getTeamStateEffect(gameState.row.teamB_UUID),
-    ),
-    Effect.bind('bidStates', () =>
-      Effect.succeed(bidStatesFromPartyUUID(partyUUID)),
-    ),
-    Effect.andThen(
-      ({ partyState, gameState, teamA_State, teamB_State, bidStates }) => ({
-        partyState,
-        gameState,
-        teamA_State,
-        teamB_State,
-        bidStates,
-      }),
-    ),
-  )
-}
+import { constructPendingGameMessages, retrieveStates, States, verifyPlayerStatus } from './common'
 
 function userBelongsToParty(
   playerUUID: PlayerUUID,
@@ -183,7 +143,7 @@ function buildNewNullBidMessages(
 }
 
 function startParty(
-  states: onBidMessageStates,
+  states: States,
 ): Effect.Effect<Array<ServerResponse<PendingGameMessage>>> {
   return pipe(
     Effect.Do,
@@ -212,16 +172,13 @@ function startParty(
 }
 
 function onPlayerDecidedNotToBet(
-  states: onBidMessageStates,
+  states: States,
 ): Effect.Effect<Array<ServerResponse<NewBidMessage | PendingGameMessage>>> {
   return pipe(
     Effect.all([
       Effect.promise(() => shiftIndexCurrentPlayer(states.partyState.uuid)),
       Effect.promise(() => shiftNullBidInARow(states.partyState.uuid)),
     ]),
-    Effect.tap(([_indexCurrentPlayer, nullBidInARow]) =>
-      Effect.log('nullBidInARow', nullBidInARow),
-    ),
     Effect.andThen(([_indexCurrentPlayer, nullBidInARow]) =>
       Match.value(nullBidInARow).pipe(
         Match.when(4, () =>
@@ -250,7 +207,7 @@ function onPlayerDecidedNotToBet(
 function onPlayerDecidedToBet(
   playerState: PlayerState,
   bet: Bet,
-  states: onBidMessageStates,
+  states: States,
 ): Effect.Effect<Array<ServerResponse<NewBidMessage>>> {
   return pipe(
     Effect.Do,
@@ -322,7 +279,7 @@ function checkBidIsValid(
 
 function checkUserPermission(
   connectedPlayerState: PlayerState,
-  states: onBidMessageStates,
+  states: States,
 ): Effect.Effect<
   [void, void],
   PermissionErrorMessage | NotYourTurnErrorMessage
@@ -357,9 +314,6 @@ export function treatBidMessage(
     verifyPlayerStatus(connectedPlayerState, ['playing']),
     Effect.andThen(() => retrieveStates(bidMessage.data.partyUUID)),
     Effect.tap((states) => checkUserPermission(connectedPlayerState, states)),
-    Effect.tap((states) =>
-      Effect.log('toto', connectedPlayerState.uuid, bidMessage),
-    ),
     Effect.andThen((states) =>
       Effect.if(bidMessage.data.bet !== null, {
         onTrue: () =>
